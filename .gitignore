@@ -1,0 +1,3 @@
+*.o
+make_spiffs
+make_spiffs.exe
