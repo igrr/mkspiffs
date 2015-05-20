@@ -165,8 +165,10 @@ int addFiles(const char* dirname)
                 continue;
             }
             
+            std::string filepath = "/";
+            filepath += ent->d_name;
             std::cout << ent->d_name << std::endl;
-            if (addFile(ent->d_name, fullpath.c_str()) != 0) {
+            if (addFile((char*)filepath.c_str(), fullpath.c_str()) != 0) {
                 std::cerr << "error adding file!" << std::endl;
                 error = true;
                 break;
