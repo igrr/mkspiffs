@@ -52,7 +52,9 @@ DIST_ARCHIVE := $(DIST_NAME).$(ARCHIVE_EXTENSION)
 
 all: $(TARGET)
 
-dist: checkdirs $(TARGET) $(DIST_DIR)
+dist: test $(DIST_ARCHIVE) 
+
+$(DIST_ARCHIVE): $(TARGET) $(DIST_DIR)
 	cp $(TARGET) $(DIST_DIR)/
 	$(ARCHIVE_CMD) $(DIST_ARCHIVE) $(DIST_DIR)
 
@@ -68,7 +70,6 @@ clean:
 	@rm -f *.o
 	@rm -f spiffs/*.o
 	@rm -f $(TARGET)
-
 
 test: $(TARGET)
 	ls -1 spiffs > out.list0
