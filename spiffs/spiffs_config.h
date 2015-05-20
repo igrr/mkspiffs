@@ -14,14 +14,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#define IRAM_ATTR
-#define STORE_TYPEDEF_ATTR __attribute__((aligned(4),packed))
-#define STORE_ATTR __attribute__((aligned(4)))
-
-#define c_memcpy memcpy
-#define c_printf printf
-#define c_memset memset
-
 typedef int16_t file_t;
 typedef int32_t s32_t;
 typedef uint32_t u32_t;
@@ -47,24 +39,22 @@ typedef uint8_t u8_t;
 #endif
 
 // compile time switches
-#define debugf(fmt, ...) //os_printf(fmt"\r\n", ##__VA_ARGS__)
-#define SYSTEM_ERROR(fmt, ...) //os_printf("ERROR: " fmt "\r\n", ##__VA_ARGS__)
 
 // Set generic spiffs debug output call.
 #ifndef SPIFFS_DGB
-#define SPIFFS_DBG(...) //os_printf(__VA_ARGS__)
+#define SPIFFS_DBG(...) //printf(__VA_ARGS__)
 #endif
 // Set spiffs debug output call for garbage collecting.
 #ifndef SPIFFS_GC_DGB
-#define SPIFFS_GC_DBG(...) //os_printf(__VA_ARGS__)
+#define SPIFFS_GC_DBG(...) //printf(__VA_ARGS__)
 #endif
 // Set spiffs debug output call for caching.
 #ifndef SPIFFS_CACHE_DGB
-#define SPIFFS_CACHE_DBG(...) //os_printf(__VA_ARGS__)
+#define SPIFFS_CACHE_DBG(...) //printf(__VA_ARGS__)
 #endif
 // Set spiffs debug output call for system consistency checks.
 #ifndef SPIFFS_CHECK_DGB
-#define SPIFFS_CHECK_DBG(...) //os_printf(__VA_ARGS__)
+#define SPIFFS_CHECK_DBG(...) //printf(__VA_ARGS__)
 #endif
 
 // Enable/disable API functions to determine exact number of bytes
@@ -99,7 +89,7 @@ typedef uint8_t u8_t;
 
 // Define maximum number of gc runs to perform to reach desired free pages.
 #ifndef SPIFFS_GC_MAX_RUNS
-#define SPIFFS_GC_MAX_RUNS              3
+#define SPIFFS_GC_MAX_RUNS              5
 #endif
 
 // Enable/disable statistics on gc. Debug/test purpose only.
@@ -139,6 +129,14 @@ typedef uint8_t u8_t;
 // than logical page size.
 #ifndef SPIFFS_COPY_BUFFER_STACK
 #define SPIFFS_COPY_BUFFER_STACK        (64)
+#endif
+
+// Enable this to have an identifiable spiffs filesystem. This will look for
+// a magic in all sectors to determine if this is a valid spiffs system or
+// not on mount point. If not, SPIFFS_format must be called prior to mounting
+// again.
+#ifndef SPIFFS_USE_MAGIC
+#define SPIFFS_USE_MAGIC                (0)
 #endif
 
 // SPIFFS_LOCK and SPIFFS_UNLOCK protects spiffs from reentrancy on api level
@@ -181,6 +179,11 @@ typedef uint8_t u8_t;
 #endif
 #endif
 
+// Enable this if your target needs aligned data for index tables
+#ifndef SPIFFS_ALIGNED_OBJECT_INDEX_TABLES
+#define SPIFFS_ALIGNED_OBJECT_INDEX_TABLES       1
+#endif
+
 // Set SPFIFS_TEST_VISUALISATION to non-zero to enable SPIFFS_vis function
 // in the api. This function will visualize all filesystem using given printf
 // function.
@@ -189,7 +192,7 @@ typedef uint8_t u8_t;
 #endif
 #if SPIFFS_TEST_VISUALISATION
 #ifndef spiffs_printf
-#define spiffs_printf(...)                c_printf(__VA_ARGS__)
+#define spiffs_printf(...)                printf(__VA_ARGS__)
 #endif
 // spiffs_printf argument for a free page
 #ifndef SPIFFS_TEST_VIS_FREE_STR
