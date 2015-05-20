@@ -6,7 +6,7 @@ ifeq ($(OS),Windows_NT)
 	DIST_SUFFIX := windows
 	ARCHIVE_CMD := 7z a
 	ARCHIVE_EXTENSION := zip
-	TARGET := make_spiffs.exe
+	TARGET := mkspiffs.exe
 else
 	UNAME_S := $(shell uname -s)
 	ifeq ($(UNAME_S),Linux)
@@ -25,7 +25,7 @@ else
 	endif
 	ARCHIVE_CMD := tar czf
 	ARCHIVE_EXTENSION := tar.gz
-	TARGET := make_spiffs
+	TARGET := mkspiffs
 endif
 
 VERSION ?= $(shell git describe --always)
@@ -44,7 +44,7 @@ CXXFLAGS += $(TARGET_CXXFLAGS)
 
 CPPFLAGS += $(INCLUDES) -D$(TARGET_OS) -DVERSION=\"$(VERSION)\" 
 
-DIST_NAME := make_spiffs-$(VERSION)-$(DIST_SUFFIX)
+DIST_NAME := mkspiffs-$(VERSION)-$(DIST_SUFFIX)
 DIST_DIR := $(DIST_NAME)
 DIST_ARCHIVE := $(DIST_NAME).$(ARCHIVE_EXTENSION)
 
@@ -65,6 +65,6 @@ $(DIST_DIR):
 	@mkdir -p $@
 
 clean:
-	@rm *.o
-	@rm spiffs/*.o
+	@rm -f *.o
+	@rm -f spiffs/*.o
 	@rm -f $(TARGET)
