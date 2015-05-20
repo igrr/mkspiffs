@@ -83,18 +83,15 @@ void spiffsMount(bool init)
     s_spiffsCache.resize((32 + s_pageSize) * maxOpenFiles);
 
 
-    int res = SPIFFS_mount(&s_fs,
-                           &cfg,
-                           &s_spiffsWorkBuf[0],
-                           &s_spiffsFds[0],
-                           s_spiffsFds.size(),
-                           &s_spiffsCache[0],
-                           s_spiffsCache.size(),
-                           NULL);
+    SPIFFS_mount(&s_fs, &cfg, 
+        &s_spiffsWorkBuf[0], 
+        &s_spiffsFds[0], s_spiffsFds.size(),
+        &s_spiffsCache[0], s_spiffsCache.size(),
+        NULL);
     
 //    debugf("mount res: %d\n", res);
     if (init) {
-        spiffs_file fd = SPIFFS_open(&s_fs, "tmp", SPIFFS_CREAT | SPIFFS_TRUNC | SPIFFS_RDWR, 0);
+        spiffs_file fd = SPIFFS_open(&s_fs, (char*) "tmp", SPIFFS_CREAT | SPIFFS_TRUNC | SPIFFS_RDWR, 0);
         uint8_t tmp = 0xff;
         SPIFFS_write(&s_fs, fd, &tmp, 1);
         SPIFFS_fremove(&s_fs, fd);
@@ -187,7 +184,7 @@ void listFiles() {
     spiffs_DIR dir;
     spiffs_dirent ent;
     
-    spiffs_DIR* res = SPIFFS_opendir(&s_fs, 0, &dir);
+    SPIFFS_opendir(&s_fs, 0, &dir);
     spiffs_dirent* it;
     while (true) {
         it = SPIFFS_readdir(&dir, &ent);
@@ -264,7 +261,7 @@ int actionVisualize() {
 
 void processArgs(int argc, const char** argv) {
     
-    TCLAP::CmdLine cmd("", ' ', "0.1");
+    TCLAP::CmdLine cmd("", ' ', VERSION);
     TCLAP::ValueArg<std::string> packArg( "c", "create", "create spiffs image from a directory", true, "", "pack_dir");
     TCLAP::SwitchArg listArg( "l", "list", "list files in spiffs image", false);
     TCLAP::SwitchArg visualizeArg( "i", "visualize", "visualize spiffs image", false);

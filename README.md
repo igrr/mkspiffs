@@ -7,20 +7,29 @@ Tool to build and unpack [SPIFFS](https://github.com/pellepl/spiffs) images.
 
 ```
 
-   ./make_spiffs  {-c <pack_dir>|-l} [-s <number>] [--] [--version] [-h]
-                  <image_file>
+   ./mkspiffs  {-c <pack_dir>|-l|-i} [-b <number>] [-p <number>] [-s
+               <number>] [--] [--version] [-h] <image_file>
 
 
 Where: 
 
    -c <pack_dir>,  --create <pack_dir>
-     (OR required)  create spiffs image from a directory
+        create spiffs image from a directory
          -- OR --
    -l,  --list
-     (OR required)  list spiffs image to a directory
+        list files in spiffs image
+         -- OR --
+   -i,  --visualize
+        visualize spiffs image
 
 
-   -s <number>,  --fs_size <number>
+   -b <number>,  --block <number>
+     fs block size, in bytes
+
+   -p <number>,  --page <number>
+     fs page size, in bytes
+
+   -s <number>,  --size <number>
      fs image size, in bytes
 
    --,  --ignore_rest
@@ -35,6 +44,7 @@ Where:
    <image_file>
      (required)  spiffs image file
 
+
 ```
 
 ## License
@@ -44,8 +54,7 @@ MIT
 ## To do
 
 - Error handling
-- Block and page size are hardcoded
-- Determing the image size automatically when opening a file
+- Determine the image size automatically when opening a file
 - Unpack
 - Automated builds
 - Code cleanup
