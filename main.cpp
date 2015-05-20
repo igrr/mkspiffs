@@ -107,9 +107,6 @@ void spiffsMount(bool init)
 
 void spiffsUnmount()
 {
-    uint32_t total, used;
-    SPIFFS_info(&s_fs, &total, &used);
-    std::cerr << "total: " << total << ", used: " << used << std::endl;
     SPIFFS_unmount(&s_fs);
 }
 
@@ -171,13 +168,12 @@ int addFiles(const char* dirname)
                 continue;
             }
             
-            std::cerr << "adding " << ent->d_name;
+            std::cout << ent->d_name << std::endl;
             if (addFile(ent->d_name, fullpath.c_str()) != 0) {
-                std::cerr << " - error!" << std::endl;
+                std::cerr << "error adding file!" << std::endl;
                 error = true;
                 break;
             }
-            std::cerr << std::endl;
         }
         closedir (dir);
     } else {
@@ -258,6 +254,9 @@ int actionVisualize() {
     
     spiffsMount(false);
     SPIFFS_vis(&s_fs);
+    uint32_t total, used;
+    SPIFFS_info(&s_fs, &total, &used);
+    std::cout << "total: " << total <<  std::endl << "used: " << used << std::endl;
     spiffsUnmount();
     
     return 0;

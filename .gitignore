@@ -1,3 +1,4 @@
 *.o
 mkspiffs
 mkspiffs.exe
+out.*
