@@ -77,4 +77,4 @@ test: $(TARGET)
 	./mkspiffs -l -s 0x80000 -p 512 -b 0x2000 out.spiffs | cut -f 2 | sort > out.list2
 	diff out.list0 out.list1
 	diff out.list0 out.list2
-	rm -f out.list{0,1,2}
+	rm -f out.{list0,list1,list2,spiffs}

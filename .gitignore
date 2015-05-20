@@ -2,3 +2,4 @@
 mkspiffs
 mkspiffs.exe
 out.*
+*.tar.gz
