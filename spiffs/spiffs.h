@@ -473,6 +473,20 @@ s32_t SPIFFS_format(spiffs *fs);
  */
 u8_t SPIFFS_mounted(spiffs *fs);
 
+/**
+ * Check if EOF reached.
+ * @param fs            the file system struct
+ * @param fh            the filehandle of the file to check
+ */
+s32_t SPIFFS_eof(spiffs *fs, spiffs_file fh);
+
+/**
+ * Get the current position of the data pointer.
+ * @param fs            the file system struct
+ * @param fh            the filehandle of the open file
+ */
+s32_t SPIFFS_tell(spiffs *fs, spiffs_file fh);
+
 #if SPIFFS_TEST_VISUALISATION
 /**
  * Prints out a visualization of the filesystem.
