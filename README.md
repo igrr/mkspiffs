@@ -11,7 +11,7 @@ Tool to build and unpack [SPIFFS](https://github.com/pellepl/spiffs) images.
                <number>] [--] [--version] [-h] <image_file>
 
 
-Where: 
+Where:
 
    -c <pack_dir>,  --create <pack_dir>
         create spiffs image from a directory
@@ -46,6 +46,21 @@ Where:
 
 
 ```
+## Build
+
+You need gcc (>= 4.8) and make. On Windows, use MinGW.
+
+Run:
+```bash
+$ make dist
+```
+
+### Build status
+
+Linux | Windows
+------|-------
+ [![Linux build status](http://img.shields.io/travis/igrr/mkspiffs.svg)](https://travis-ci.org/igrr/mkspiffs) | [![Windows build status](http://img.shields.io/appveyor/ci/igrr/mkspiffs.svg)](https://ci.appveyor.com/project/igrr/mkspiffs)
+
 
 ## License
 
@@ -55,7 +70,4 @@ MIT
 
 - Error handling
 - Determine the image size automatically when opening a file
-- Unpack
-- Automated builds
 - Code cleanup
-
