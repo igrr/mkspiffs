@@ -12,7 +12,9 @@ matrix:
 build_script:
     - SET PATH=C:\MinGW\bin;C:\MinGW\msys\1.0\bin;%PATH%
     - make dist
-    - appveyor PushArtifact mkspiffs*.zip
+
+artifacts:
+  - path: '*.zip'
 
 deploy:
     release: $(PRODUCT_VERSION)

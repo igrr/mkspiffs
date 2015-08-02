@@ -1,5 +1,5 @@
 CFLAGS		?= -std=gnu99 -Os -Wall
-CXXFLAGS	?= -std=c++11 -Os -Wall
+CXXFLAGS	?= -std=gnu++11 -Os -Wall
 
 ifeq ($(OS),Windows_NT)
 	TARGET_OS := WINDOWS
@@ -42,7 +42,7 @@ INCLUDES := -Itclap -Ispiffs -I.
 CFLAGS   += $(TARGET_CFLAGS)
 CXXFLAGS += $(TARGET_CXXFLAGS)
 
-CPPFLAGS += $(INCLUDES) -D$(TARGET_OS) -DVERSION=\"$(VERSION)\" 
+CPPFLAGS += $(INCLUDES) -D$(TARGET_OS) -DVERSION=\"$(VERSION)\" -D__NO_INLINE__
 
 DIST_NAME := mkspiffs-$(VERSION)-$(DIST_SUFFIX)
 DIST_DIR := $(DIST_NAME)
@@ -52,13 +52,13 @@ DIST_ARCHIVE := $(DIST_NAME).$(ARCHIVE_EXTENSION)
 
 all: $(TARGET)
 
-dist: test $(DIST_ARCHIVE) 
+dist: test $(DIST_ARCHIVE)
 
 $(DIST_ARCHIVE): $(TARGET) $(DIST_DIR)
 	cp $(TARGET) $(DIST_DIR)/
 	$(ARCHIVE_CMD) $(DIST_ARCHIVE) $(DIST_DIR)
 
-$(TARGET): $(OBJ) 
+$(TARGET): $(OBJ)
 	g++ $^ -o $@
 	strip $(TARGET)
 
@@ -73,8 +73,8 @@ clean:
 
 test: $(TARGET)
 	ls -1 spiffs > out.list0
-	./mkspiffs -c spiffs -s 0x80000 -p 512 -b 0x2000 out.spiffs > out.list1
-	./mkspiffs -l -s 0x80000 -p 512 -b 0x2000 out.spiffs | cut -f 2 | sort > out.list2
-	diff out.list0 out.list1
-	diff out.list0 out.list2
+	./mkspiffs -c spiffs -s 0x80000 -p 512 -b 0x2000 out.spiffs | sort | sed s/^\\/// > out.list1
+	./mkspiffs -l -s 0x80000 -p 512 -b 0x2000 out.spiffs | cut -f 2 | sort | sed s/^\\/// > out.list2
+	diff --strip-trailing-cr out.list0 out.list1
+	diff --strip-trailing-cr out.list0 out.list2
 	rm -f out.{list0,list1,list2,spiffs}

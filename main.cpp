@@ -52,39 +52,39 @@ static s32_t api_spiffs_write(u32_t addr, u32_t size, u8_t *src){
 static s32_t api_spiffs_erase(u32_t addr, u32_t size){
     memset(&s_flashmem[0] + addr, 0xff, size);
     return SPIFFS_OK;
-} 
+}
 
 
 //implementation
 
 int spiffsTryMount(){
     spiffs_config cfg = {0};
-    
+
     cfg.phys_addr = 0x0000;
     cfg.phys_size = (u32_t) s_flashmem.size();
-        
+
     cfg.phys_erase_block = s_blockSize;
     cfg.log_block_size = s_blockSize;
     cfg.log_page_size = s_pageSize;
-    
+
     cfg.hal_read_f = api_spiffs_read;
     cfg.hal_write_f = api_spiffs_write;
     cfg.hal_erase_f = api_spiffs_erase;
-    
+
     const int maxOpenFiles = 4;
     s_spiffsWorkBuf.resize(s_pageSize * 2);
     s_spiffsFds.resize(32 * maxOpenFiles);
     s_spiffsCache.resize((32 + s_pageSize) * maxOpenFiles);
 
-    return SPIFFS_mount(&s_fs, &cfg, 
-        &s_spiffsWorkBuf[0], 
+    return SPIFFS_mount(&s_fs, &cfg,
+        &s_spiffsWorkBuf[0],
         &s_spiffsFds[0], s_spiffsFds.size(),
         &s_spiffsCache[0], s_spiffsCache.size(),
         NULL);
 }
 
 bool spiffsMount(){
-  if(SPIFFS_mounted(&s_fs)) 
+  if(SPIFFS_mounted(&s_fs))
     return true;
   int res = spiffsTryMount();
   return (res == SPIFFS_OK);
@@ -94,7 +94,7 @@ bool spiffsFormat(){
   spiffsMount();
   SPIFFS_unmount(&s_fs);
   int formated = SPIFFS_format(&s_fs);
-  if(formated != SPIFFS_OK) 
+  if(formated != SPIFFS_OK)
     return false;
   return (spiffsTryMount() == SPIFFS_OK);
 }
@@ -110,13 +110,13 @@ int addFile(char* name, const char* path) {
         std::cerr << "error: failed to open " << path << " for reading" << std::endl;
         return 1;
     }
-    
+
     spiffs_file dst = SPIFFS_open(&s_fs, name, SPIFFS_CREAT | SPIFFS_TRUNC | SPIFFS_RDWR, 0);
-    
+
     fseek(src, 0, SEEK_END);
     size_t size = ftell(src);
     fseek(src, 0, SEEK_SET);
-    
+
     size_t left = size;
     uint8_t data_byte;
     while (left > 0){
@@ -133,7 +133,7 @@ int addFile(char* name, const char* path) {
         }
         left -= 1;
     }
-    
+
     SPIFFS_close(&s_fs, dst);
     fclose(src);
     return 0;
@@ -156,10 +156,10 @@ int addFiles(const char* dirname){
                 std::cerr << "skipping " << ent->d_name << std::endl;
                 continue;
             }
-            
+
             std::string filepath = "/";
             filepath += ent->d_name;
-            std::cout << ent->d_name << std::endl;
+            std::cout << filepath << std::endl;
             if (addFile((char*)filepath.c_str(), fullpath.c_str()) != 0) {
                 std::cerr << "error adding file!" << std::endl;
                 error = true;
@@ -177,14 +177,14 @@ int addFiles(const char* dirname){
 void listFiles() {
     spiffs_DIR dir;
     spiffs_dirent ent;
-    
+
     SPIFFS_opendir(&s_fs, 0, &dir);
     spiffs_dirent* it;
     while (true) {
         it = SPIFFS_readdir(&dir, &ent);
         if (!it)
             break;
-        
+
         std::cout << it->size << '\t' << it->name << std::endl;
     }
     SPIFFS_closedir(&dir);
@@ -194,33 +194,33 @@ void listFiles() {
 
 int actionPack() {
     s_flashmem.resize(s_imageSize, 0xff);
-    
+
     FILE* fdres = fopen(s_imageName.c_str(), "wb");
     if (!fdres) {
         std::cerr << "error: failed to open image file" << std::endl;
         return 1;
     }
-    
+
     spiffsFormat();
     int result = addFiles(s_dirName.c_str());
     spiffsUnmount();
-    
+
     fwrite(&s_flashmem[0], 4, s_flashmem.size()/4, fdres);
     fclose(fdres);
-    
+
     return result;
 }
 
 
 int actionList() {
     s_flashmem.resize(s_imageSize, 0xff);
-    
+
     FILE* fdsrc = fopen(s_imageName.c_str(), "rb");
     if (!fdsrc) {
         std::cerr << "error: failed to open image file" << std::endl;
         return 1;
     }
-    
+
     fread(&s_flashmem[0], 4, s_flashmem.size()/4, fdsrc);
     fclose(fdsrc);
     spiffsMount();
@@ -231,23 +231,23 @@ int actionList() {
 
 int actionVisualize() {
     s_flashmem.resize(s_imageSize, 0xff);
-    
+
     FILE* fdsrc = fopen(s_imageName.c_str(), "rb");
     if (!fdsrc) {
         std::cerr << "error: failed to open image file" << std::endl;
         return 1;
     }
-    
+
     fread(&s_flashmem[0], 4, s_flashmem.size()/4, fdsrc);
     fclose(fdsrc);
-    
+
     spiffsMount();
     SPIFFS_vis(&s_fs);
     uint32_t total, used;
     SPIFFS_info(&s_fs, &total, &used);
     std::cout << "total: " << total <<  std::endl << "used: " << used << std::endl;
     spiffsUnmount();
-    
+
     return 0;
 }
 
@@ -268,7 +268,7 @@ void processArgs(int argc, const char** argv) {
     cmd.xorAdd( args );
     cmd.add( outNameArg );
     cmd.parse( argc, argv );
-    
+
     if (packArg.isSet()) {
         s_dirName = packArg.getValue();
         s_action = ACTION_PACK;
@@ -279,7 +279,7 @@ void processArgs(int argc, const char** argv) {
     else if (visualizeArg.isSet()) {
         s_action = ACTION_VISUALIZE;
     }
-    
+
     s_imageName = outNameArg.getValue();
     s_imageSize = imageSizeArg.getValue();
     s_pageSize  = pageSizeArg.getValue();
@@ -287,20 +287,20 @@ void processArgs(int argc, const char** argv) {
 }
 
 int main(int argc, const char * argv[]) {
-    
+
     try {
         processArgs(argc, argv);
     } catch(...) {
         std::cerr << "Invalid arguments" << std::endl;
         return 1;
     }
-    
+
     switch (s_action) {
         case ACTION_PACK: return actionPack();
         case ACTION_LIST: return actionList();
         case ACTION_VISUALIZE: return actionVisualize();
         default: ;
     }
-    
+
     return 1;
 }

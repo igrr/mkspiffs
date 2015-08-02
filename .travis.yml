@@ -1,7 +1,13 @@
 language: cpp
-compiler:
-- gcc
-script: make dist
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-4.8
+script:
+  - export CXX="g++-4.8" CC="gcc-4.8"
+  - make dist
 notifications:
   email:
     recipients:
