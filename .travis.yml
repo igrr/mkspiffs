@@ -21,3 +21,4 @@ deploy:
   file: '*.zip'
   on:
     repo: igrr/mkspiffs
+    tags: true
