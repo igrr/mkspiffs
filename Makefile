@@ -7,6 +7,8 @@ ifeq ($(OS),Windows_NT)
 	ARCHIVE_CMD := 7z a
 	ARCHIVE_EXTENSION := zip
 	TARGET := mkspiffs.exe
+	TARGET_LDFLAGS := -Wl,-static -static-libgcc
+
 else
 	UNAME_S := $(shell uname -s)
 	ifeq ($(UNAME_S),Linux)
@@ -22,6 +24,11 @@ else
 	ifeq ($(UNAME_S),Darwin)
 		TARGET_OS := OSX
 		DIST_SUFFIX := osx
+		CC=clang
+		CXX=clang++
+		TARGET_CFLAGS   = -mmacosx-version-min=10.7 -arch i386 -arch x86_64
+		TARGET_CXXFLAGS = -mmacosx-version-min=10.7 -arch i386 -arch x86_64 -stdlib=libc++
+		TARGET_LDFLAGS  = -arch i386 -arch x86_64 -stdlib=libc++
 	endif
 	ARCHIVE_CMD := tar czf
 	ARCHIVE_EXTENSION := tar.gz
@@ -41,6 +48,7 @@ INCLUDES := -Itclap -Ispiffs -I.
 
 CFLAGS   += $(TARGET_CFLAGS)
 CXXFLAGS += $(TARGET_CXXFLAGS)
+LDFLAGS  += $(TARGET_LDFLAGS)
 
 CPPFLAGS += $(INCLUDES) -D$(TARGET_OS) -DVERSION=\"$(VERSION)\" -D__NO_INLINE__
 
@@ -59,9 +67,8 @@ $(DIST_ARCHIVE): $(TARGET) $(DIST_DIR)
 	$(ARCHIVE_CMD) $(DIST_ARCHIVE) $(DIST_DIR)
 
 $(TARGET): $(OBJ)
-	g++ $^ -o $@
+	$(CXX) $^ -o $@ $(LDFLAGS)
 	strip $(TARGET)
-
 
 $(DIST_DIR):
 	@mkdir -p $@
