@@ -7,6 +7,7 @@ ifeq ($(OS),Windows_NT)
 	ARCHIVE_CMD := 7z a
 	ARCHIVE_EXTENSION := zip
 	TARGET := mkspiffs.exe
+	TARGET_CFLAGS := -mno-ms-bitfields
 	TARGET_LDFLAGS := -Wl,-static -static-libgcc
 
 else
