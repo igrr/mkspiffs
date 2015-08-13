@@ -64,7 +64,7 @@ s32_t spiffs_phys_rd(
     u32_t addr,
     u32_t len,
     u8_t *dst) {
-  return fs->cfg.hal_read_f(addr, len, dst);
+  return SPIFFS_HAL_READ(fs, addr, len, dst);
 }
 
 s32_t spiffs_phys_wr(
@@ -72,7 +72,7 @@ s32_t spiffs_phys_wr(
     u32_t addr,
     u32_t len,
     u8_t *src) {
-  return fs->cfg.hal_write_f(addr, len, src);
+  return SPIFFS_HAL_WRITE(fs, addr, len, src);
 }
 
 #endif
@@ -83,6 +83,7 @@ s32_t spiffs_phys_cpy(
     u32_t dst,
     u32_t src,
     u32_t len) {
+  (void)fh;
   s32_t res;
   u8_t b[SPIFFS_COPY_BUFFER_STACK];
   while (len > 0) {
@@ -227,7 +228,8 @@ s32_t spiffs_erase_block(
   // here we ignore res, just try erasing the block
   while (size > 0) {
     SPIFFS_DBG("erase %08x:%08x\n", addr,  SPIFFS_CFG_PHYS_ERASE_SZ(fs));
-    (void)fs->cfg.hal_erase_f(addr, SPIFFS_CFG_PHYS_ERASE_SZ(fs));
+    SPIFFS_HAL_ERASE(fs, addr, SPIFFS_CFG_PHYS_ERASE_SZ(fs));
+
     addr += SPIFFS_CFG_PHYS_ERASE_SZ(fs);
     size -= SPIFFS_CFG_PHYS_ERASE_SZ(fs);
   }
@@ -389,7 +391,10 @@ s32_t spiffs_obj_lu_find_free(
     int *lu_entry) {
   s32_t res;
   if (!fs->cleaning && fs->free_blocks < 2) {
-    res = spiffs_gc_quick(fs);
+    res = spiffs_gc_quick(fs, 0);
+    if (res == SPIFFS_ERR_NO_DELETED_BLOCKS) {
+      res = SPIFFS_OK;
+    }
     SPIFFS_CHECK_RES(res);
     if (fs->free_blocks < 2) {
       return SPIFFS_ERR_FULL;
