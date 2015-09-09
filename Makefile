@@ -79,10 +79,12 @@ clean:
 	@rm -f spiffs/*.o
 	@rm -f $(TARGET)
 
+SPIFFS_TEST_FS_CONFIG := -s 0x100000 -p 512 -b 0x2000
+
 test: $(TARGET)
 	ls -1 spiffs > out.list0
-	./mkspiffs -c spiffs -s 0x80000 -p 512 -b 0x2000 out.spiffs | sort | sed s/^\\/// > out.list1
-	./mkspiffs -l -s 0x80000 -p 512 -b 0x2000 out.spiffs | cut -f 2 | sort | sed s/^\\/// > out.list2
+	./mkspiffs -c spiffs $(SPIFFS_TEST_FS_CONFIG) out.spiffs | sort | sed s/^\\/// > out.list1
+	./mkspiffs -l $(SPIFFS_TEST_FS_CONFIG) out.spiffs | cut -f 2 | sort | sed s/^\\/// > out.list2
 	diff --strip-trailing-cr out.list0 out.list1
 	diff --strip-trailing-cr out.list0 out.list2
 	rm -f out.{list0,list1,list2,spiffs}
