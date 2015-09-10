@@ -7,20 +7,23 @@ Tool to build and unpack [SPIFFS](https://github.com/pellepl/spiffs) images.
 
 ```
 
-   ./mkspiffs  {-c <pack_dir>|-l|-i} [-b <number>] [-p <number>] [-s
+   ./mkspiffs   {-c <pack_dir>|-u <dest_dir>|-l|-i} [-b <number>] [-p <number>] [-s
                <number>] [--] [--version] [-h] <image_file>
 
 
 Where:
 
    -c <pack_dir>,  --create <pack_dir>
-        create spiffs image from a directory
+     (OR required)  create spiffs image from a directory
+         -- OR --
+   -u <dest_dir>,  --unpack <dest_dir>
+     (OR required)  unpack spiffs image to a directory
          -- OR --
    -l,  --list
-        list files in spiffs image
+     (OR required)  list files in spiffs image
          -- OR --
    -i,  --visualize
-        visualize spiffs image
+     (OR required)  visualize spiffs image
 
 
    -b <number>,  --block <number>
