@@ -29,7 +29,7 @@ static int s_imageSize;
 static int s_pageSize;
 static int s_blockSize;
 
-enum Action { ACTION_NONE, ACTION_PACK, ACTION_LIST, ACTION_VISUALIZE };
+enum Action { ACTION_NONE, ACTION_PACK, ACTION_UNPACK, ACTION_LIST, ACTION_VISUALIZE };
 static Action s_action = ACTION_NONE;
 
 static spiffs s_fs;
@@ -190,6 +190,137 @@ void listFiles() {
     SPIFFS_closedir(&dir);
 }
 
+/**
+ * @brief Check if directory exists.
+ * @param path Directory path.
+ * @return True if exists otherwise false.
+ *
+ * @author Pascal Gollor (http://www.pgollor.de/cms/)
+ */
+bool dirExists(const char* path)
+{
+	DIR *d = opendir(path);
+
+	if (d)
+	{
+		closedir(d);
+		return true;
+	}
+
+	return false;
+}
+
+/**
+ * @brief Unpack file from file system.
+ * @param srcName Filename.
+ * @param destPath Destination file path path.
+ * @return True or false.
+ *
+ * @author Pascal Gollor (http://www.pgollor.de/cms/)
+ */
+//bool unpackFile(const char *srcName, const char *destPath)
+bool unpackFile(spiffs_dirent *spiffsFile, const char *destPath)
+{
+	char buffer[spiffsFile->size];
+	std::string filename = (const char*)(spiffsFile->name);
+
+	// Open file from spiffs file system.
+	spiffs_file src = SPIFFS_open(&s_fs, (char *)(filename.c_str()), SPIFFS_RDONLY, 0);
+
+	// read content into buffer
+	SPIFFS_read(&s_fs, src, buffer, spiffsFile->size);
+
+	// Close spiffs file.
+	SPIFFS_close(&s_fs, src);
+
+	// Open file.
+	FILE* dst = fopen(destPath, "wb");
+
+	// Write content into file.
+	fputs(buffer, dst);
+
+	// Close file.
+	fclose(dst);
+
+
+	return true;
+}
+
+/**
+ * @brief Unpack files from file system.
+ * @param sDest Directory path as std::string.
+ * @return True or false.
+ *
+ * @author Pascal Gollor (http://www.pgollor.de/cms/)
+ *
+ * todo: Do unpack stuff for directories.
+ */
+bool unpackFiles(std::string sDest)
+{
+	spiffs_DIR dir;
+	spiffs_dirent ent;
+
+	// Add "./" to path if is not given.
+	if (sDest.find("./") == std::string::npos)
+	{
+		sDest = "./" + sDest;
+	}
+
+	// Check if directory exists. If it does not then try to create it with permissions 755.
+	if (! dirExists(sDest.c_str()))
+	{
+		std::cout << "Directory " << sDest << " does not exists. Try to create it." << std::endl;
+
+		// Try to create dir.
+		if (mkdir(sDest.c_str(), S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH) != 0)
+		{
+			std::cerr << "Can not create directory!!!" << std::endl;
+			return false;
+		}
+	}
+
+	// Open directory.
+	SPIFFS_opendir(&s_fs, 0, &dir);
+
+	// Read content from directory.
+	spiffs_dirent* it = SPIFFS_readdir(&dir, &ent);
+	while (it)
+	{
+		// Check if content is a file.
+		if ((int)(it->type) == 1)
+		{
+			//std::string sDestFile = (const char*)(it->name);
+		 	//std::string sDestFilePath = sDest + "/" + sDestFile;
+			//std::string sDestFilePath = sDest + sDestFile;
+			std::string sDestFilePath = sDest + (const char*)(it->name);
+
+			// Unpack file to destination directory.
+			//if (! unpackFile(sDestFile.c_str(), sDestFilePath.c_str()) )
+			if (! unpackFile(it, sDestFilePath.c_str()) )
+			{
+				std::cout << "Can not unpack " << it->name << "!" << std::endl;
+				return false;
+			}
+
+			// Output stuff.
+			std::cout
+				<< it->name
+				<< '\t'
+				<< " > " << sDestFilePath
+				<< '\t'
+				<< "size: " << it->size << " Bytes"
+				<< std::endl;
+		}
+
+		it = SPIFFS_readdir(&dir, &ent);
+	}
+
+	// Close directory.
+	SPIFFS_closedir(&dir);
+
+	return true;
+}
+
 // Actions
 
 int actionPack() {
@@ -209,6 +340,45 @@ int actionPack() {
     fclose(fdres);
 
     return result;
+}
+
+/**
+ * @brief Unpack action.
+ * @return 0 success, 1 error
+ *
+ * @author Pascal Gollor (http://www.pgollor.de/cms/)
+ */
+int actionUnpack(void)
+{
+	int ret = 0;
+	s_flashmem.resize(s_imageSize, 0xff);
+
+	// open spiffs image
+	FILE* fdsrc = fopen(s_imageName.c_str(), "rb");
+	if (!fdsrc) {
+		std::cerr << "error: failed to open image file" << std::endl;
+		return 1;
+	}
+
+	// read content into s_flashmem
+	fread(&s_flashmem[0], 4, s_flashmem.size()/4, fdsrc);
+
+	// close fiel handle
+	fclose(fdsrc);
+
+	// mount file system
+	spiffsMount();
+
+	// unpack files
+	if (! unpackFiles(s_dirName))
+	{
+		ret = 1;
+	}
+
+	// unmount file system
+	spiffsUnmount();
+
+	return ret;
 }
 
 
@@ -254,6 +424,7 @@ int actionVisualize() {
 void processArgs(int argc, const char** argv) {
     TCLAP::CmdLine cmd("", ' ', VERSION);
     TCLAP::ValueArg<std::string> packArg( "c", "create", "create spiffs image from a directory", true, "", "pack_dir");
+    TCLAP::ValueArg<std::string> unpackArg( "u", "unpack", "unpack spiffs image to a directory", true, "", "dest_dir");
     TCLAP::SwitchArg listArg( "l", "list", "list files in spiffs image", false);
     TCLAP::SwitchArg visualizeArg( "i", "visualize", "visualize spiffs image", false);
     TCLAP::UnlabeledValueArg<std::string> outNameArg( "image_file", "spiffs image file", true, "", "image_file"  );
@@ -264,19 +435,27 @@ void processArgs(int argc, const char** argv) {
     cmd.add( imageSizeArg );
     cmd.add( pageSizeArg );
     cmd.add( blockSizeArg );
-    std::vector<TCLAP::Arg*> args = {&packArg, &listArg, &visualizeArg};
+    std::vector<TCLAP::Arg*> args = {&packArg, &unpackArg, &listArg, &visualizeArg};
     cmd.xorAdd( args );
     cmd.add( outNameArg );
     cmd.parse( argc, argv );
 
-    if (packArg.isSet()) {
+    if (packArg.isSet())
+    {
         s_dirName = packArg.getValue();
         s_action = ACTION_PACK;
     }
-    else if (listArg.isSet()) {
+    else if (unpackArg.isSet())
+    {
+        s_dirName = unpackArg.getValue();
+        s_action = ACTION_UNPACK;
+    }
+    else if (listArg.isSet())
+    {
         s_action = ACTION_LIST;
     }
-    else if (visualizeArg.isSet()) {
+    else if (visualizeArg.isSet())
+    {
         s_action = ACTION_VISUALIZE;
     }
 
@@ -295,11 +474,22 @@ int main(int argc, const char * argv[]) {
         return 1;
     }
 
-    switch (s_action) {
-        case ACTION_PACK: return actionPack();
-        case ACTION_LIST: return actionList();
-        case ACTION_VISUALIZE: return actionVisualize();
-        default: ;
+    switch (s_action)
+    {
+    case ACTION_PACK:
+        return actionPack();
+        break;
+    case ACTION_UNPACK:
+    	return actionUnpack();
+        break;
+    case ACTION_LIST:
+        return actionList();
+        break;
+    case ACTION_VISUALIZE:
+        return actionVisualize();
+        break;
+    default:
+        break;
     }
 
     return 1;
