@@ -221,7 +221,7 @@ bool dirExists(const char* path)
 //bool unpackFile(const char *srcName, const char *destPath)
 bool unpackFile(spiffs_dirent *spiffsFile, const char *destPath)
 {
-	char buffer[spiffsFile->size];
+	u8_t buffer[spiffsFile->size];
 	std::string filename = (const char*)(spiffsFile->name);
 
 	// Open file from spiffs file system.
@@ -237,7 +237,8 @@ bool unpackFile(spiffs_dirent *spiffsFile, const char *destPath)
 	FILE* dst = fopen(destPath, "wb");
 
 	// Write content into file.
-	fputs(buffer, dst);
+	//fputs(buffer, dst);
+	fwrite(buffer, sizeof(u8_t), sizeof(buffer), dst);
 
 	// Close file.
 	fclose(dst);
