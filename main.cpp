@@ -197,17 +197,15 @@ void listFiles() {
  *
  * @author Pascal Gollor (http://www.pgollor.de/cms/)
  */
-bool dirExists(const char* path)
-{
-	DIR *d = opendir(path);
+bool dirExists(const char* path) {
+    DIR *d = opendir(path);
 
-	if (d)
-	{
-		closedir(d);
-		return true;
-	}
+    if (d) {
+        closedir(d);
+        return true;
+    }
 
-	return false;
+    return false;
 }
 
 /**
@@ -218,31 +216,30 @@ bool dirExists(const char* path)
  *
  * @author Pascal Gollor (http://www.pgollor.de/cms/)
  */
-bool unpackFile(spiffs_dirent *spiffsFile, const char *destPath)
-{
-	u8_t buffer[spiffsFile->size];
-	std::string filename = (const char*)(spiffsFile->name);
+bool unpackFile(spiffs_dirent *spiffsFile, const char *destPath) {
+    u8_t buffer[spiffsFile->size];
+    std::string filename = (const char*)(spiffsFile->name);
 
-	// Open file from spiffs file system.
-	spiffs_file src = SPIFFS_open(&s_fs, (char *)(filename.c_str()), SPIFFS_RDONLY, 0);
+    // Open file from spiffs file system.
+    spiffs_file src = SPIFFS_open(&s_fs, (char *)(filename.c_str()), SPIFFS_RDONLY, 0);
 
-	// read content into buffer
-	SPIFFS_read(&s_fs, src, buffer, spiffsFile->size);
+    // read content into buffer
+    SPIFFS_read(&s_fs, src, buffer, spiffsFile->size);
 
-	// Close spiffs file.
-	SPIFFS_close(&s_fs, src);
+    // Close spiffs file.
+    SPIFFS_close(&s_fs, src);
 
-	// Open file.
-	FILE* dst = fopen(destPath, "wb");
+    // Open file.
+    FILE* dst = fopen(destPath, "wb");
 
-	// Write content into file.
-	fwrite(buffer, sizeof(u8_t), sizeof(buffer), dst);
+    // Write content into file.
+    fwrite(buffer, sizeof(u8_t), sizeof(buffer), dst);
 
-	// Close file.
-	fclose(dst);
+    // Close file.
+    fclose(dst);
 
 
-	return true;
+    return true;
 }
 
 /**
@@ -254,71 +251,64 @@ bool unpackFile(spiffs_dirent *spiffsFile, const char *destPath)
  *
  * todo: Do unpack stuff for directories.
  */
-bool unpackFiles(std::string sDest)
-{
-	spiffs_DIR dir;
-	spiffs_dirent ent;
+bool unpackFiles(std::string sDest) {
+    spiffs_DIR dir;
+    spiffs_dirent ent;
 
-	// Add "./" to path if is not given.
-	if (sDest.find("./") == std::string::npos)
-	{
-		sDest = "./" + sDest;
-	}
+    // Add "./" to path if is not given.
+    if (sDest.find("./") == std::string::npos) {
+        sDest = "./" + sDest;
+    }
 
-	// Check if directory exists. If it does not then try to create it with permissions 755.
-	if (! dirExists(sDest.c_str()))
-	{
-		std::cout << "Directory " << sDest << " does not exists. Try to create it." << std::endl;
+    // Check if directory exists. If it does not then try to create it with permissions 755.
+    if (! dirExists(sDest.c_str())) {
+        std::cout << "Directory " << sDest << " does not exists. Try to create it." << std::endl;
 
-		// Try to create directory.
-		// platform stuff...
+        // Try to create directory.
+        // platform stuff...
 #if defined(_WIN32)
-		if (_mkdir(sDest.c_str()) != 0)
+        if (_mkdir(sDest.c_str()) != 0) {
 #else
-		if (mkdir(sDest.c_str(), S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH) != 0)
+        if (mkdir(sDest.c_str(), S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH) != 0) {
 #endif
-		{
-			std::cerr << "Can not create directory!!!" << std::endl;
-			return false;
-		}
-	}
+            std::cerr << "Can not create directory!!!" << std::endl;
+            return false;
+        }
+    }
 
-	// Open directory.
-	SPIFFS_opendir(&s_fs, 0, &dir);
+    // Open directory.
+    SPIFFS_opendir(&s_fs, 0, &dir);
 
-	// Read content from directory.
-	spiffs_dirent* it = SPIFFS_readdir(&dir, &ent);
-	while (it)
-	{
-		// Check if content is a file.
-		if ((int)(it->type) == 1)
-		{
-			std::string sDestFilePath = sDest + (const char*)(it->name);
+    // Read content from directory.
+    spiffs_dirent* it = SPIFFS_readdir(&dir, &ent);
+    while (it) {
+        // Check if content is a file.
+        if ((int)(it->type) == 1) {
+            std::string sDestFilePath = sDest + (const char*)(it->name);
 
-			// Unpack file to destination directory.
-			if (! unpackFile(it, sDestFilePath.c_str()) )
-			{
-				std::cout << "Can not unpack " << it->name << "!" << std::endl;
-				return false;
-			}
+            // Unpack file to destination directory.
+            if (! unpackFile(it, sDestFilePath.c_str()) ) {
+                std::cout << "Can not unpack " << it->name << "!" << std::endl;
+                return false;
+            }
 
-			// Output stuff.
-			std::cout
-				<< it->name
-				<< '\t'
-				<< " > " << sDestFilePath
-				<< '\t'
-				<< "size: " << it->size << " Bytes"
-				<< std::endl;
-		}
+            // Output stuff.
+            std::cout
+                << it->name
+                << '\t'
+                << " > " << sDestFilePath
+                << '\t'
+                << "size: " << it->size << " Bytes"
+                << std::endl;
+        }
 
-		it = SPIFFS_readdir(&dir, &ent);
-	}
+        it = SPIFFS_readdir(&dir, &ent);
+    }
 
-	// Close directory.
-	SPIFFS_closedir(&dir);
+    // Close directory.
+    SPIFFS_closedir(&dir);
 
-	return true;
+    return true;
 }
 
 // Actions
@@ -348,37 +338,35 @@ int actionPack() {
  *
  * @author Pascal Gollor (http://www.pgollor.de/cms/)
  */
-int actionUnpack(void)
-{
-	int ret = 0;
-	s_flashmem.resize(s_imageSize, 0xff);
+int actionUnpack(void) {
+    int ret = 0;
+    s_flashmem.resize(s_imageSize, 0xff);
 
-	// open spiffs image
-	FILE* fdsrc = fopen(s_imageName.c_str(), "rb");
-	if (!fdsrc) {
-		std::cerr << "error: failed to open image file" << std::endl;
-		return 1;
-	}
+    // open spiffs image
+    FILE* fdsrc = fopen(s_imageName.c_str(), "rb");
+    if (!fdsrc) {
+        std::cerr << "error: failed to open image file" << std::endl;
+        return 1;
+    }
 
-	// read content into s_flashmem
-	fread(&s_flashmem[0], 4, s_flashmem.size()/4, fdsrc);
+    // read content into s_flashmem
+    fread(&s_flashmem[0], 4, s_flashmem.size()/4, fdsrc);
 
-	// close fiel handle
-	fclose(fdsrc);
+    // close fiel handle
+    fclose(fdsrc);
 
-	// mount file system
-	spiffsMount();
+    // mount file system
+    spiffsMount();
 
-	// unpack files
-	if (! unpackFiles(s_dirName))
-	{
-		ret = 1;
-	}
+    // unpack files
+    if (! unpackFiles(s_dirName)) {
+        ret = 1;
+    }
 
-	// unmount file system
-	spiffsUnmount();
+    // unmount file system
+    spiffsUnmount();
 
-	return ret;
+    return ret;
 }
 
 
@@ -440,22 +428,15 @@ void processArgs(int argc, const char** argv) {
     cmd.add( outNameArg );
     cmd.parse( argc, argv );
 
-    if (packArg.isSet())
-    {
+    if (packArg.isSet()) {
         s_dirName = packArg.getValue();
         s_action = ACTION_PACK;
-    }
-    else if (unpackArg.isSet())
-    {
+    } else if (unpackArg.isSet()) {
         s_dirName = unpackArg.getValue();
         s_action = ACTION_UNPACK;
-    }
-    else if (listArg.isSet())
-    {
+    } else if (listArg.isSet()) {
         s_action = ACTION_LIST;
-    }
-    else if (visualizeArg.isSet())
-    {
+    } else if (visualizeArg.isSet()) {
         s_action = ACTION_VISUALIZE;
     }
 
@@ -474,8 +455,7 @@ int main(int argc, const char * argv[]) {
         return 1;
     }
 
-    switch (s_action)
-    {
+    switch (s_action) {
     case ACTION_PACK:
         return actionPack();
         break;
