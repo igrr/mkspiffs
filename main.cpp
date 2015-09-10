@@ -271,8 +271,13 @@ bool unpackFiles(std::string sDest)
 	{
 		std::cout << "Directory " << sDest << " does not exists. Try to create it." << std::endl;
 
-		// Try to create dir.
+		// Try to create directory.
+		// platform stuff...
+#if defined(_WIN32)
+		if (_mkdir(sDest.c_str()) != 0)
+#else
 		if (mkdir(sDest.c_str(), S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH) != 0)
+#endif
 		{
 			std::cerr << "Can not create directory!!!" << std::endl;
 			return false;
