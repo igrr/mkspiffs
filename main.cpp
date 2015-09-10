@@ -212,13 +212,12 @@ bool dirExists(const char* path)
 
 /**
  * @brief Unpack file from file system.
- * @param srcName Filename.
+ * @param spiffsFile SPIFFS dir entry pointer.
  * @param destPath Destination file path path.
  * @return True or false.
  *
  * @author Pascal Gollor (http://www.pgollor.de/cms/)
  */
-//bool unpackFile(const char *srcName, const char *destPath)
 bool unpackFile(spiffs_dirent *spiffsFile, const char *destPath)
 {
 	u8_t buffer[spiffsFile->size];
@@ -237,7 +236,6 @@ bool unpackFile(spiffs_dirent *spiffsFile, const char *destPath)
 	FILE* dst = fopen(destPath, "wb");
 
 	// Write content into file.
-	//fputs(buffer, dst);
 	fwrite(buffer, sizeof(u8_t), sizeof(buffer), dst);
 
 	// Close file.
@@ -295,13 +293,9 @@ bool unpackFiles(std::string sDest)
 		// Check if content is a file.
 		if ((int)(it->type) == 1)
 		{
-			//std::string sDestFile = (const char*)(it->name);
-		 	//std::string sDestFilePath = sDest + "/" + sDestFile;
-			//std::string sDestFilePath = sDest + sDestFile;
 			std::string sDestFilePath = sDest + (const char*)(it->name);
 
 			// Unpack file to destination directory.
-			//if (! unpackFile(sDestFile.c_str(), sDestFilePath.c_str()) )
 			if (! unpackFile(it, sDestFilePath.c_str()) )
 			{
 				std::cout << "Can not unpack " << it->name << "!" << std::endl;
