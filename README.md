@@ -7,7 +7,7 @@ Tool to build and unpack [SPIFFS](https://github.com/pellepl/spiffs) images.
 
 ```
 
-   ./mkspiffs  {-c <pack_dir>|-l|-i} [-b <number>] [-p <number>] [-s
+   ./mkspiffs   {-c <pack_dir>|-u <dest_dir>|-l|-i} [-b <number>] [-p <number>] [-s
                <number>] [--] [--version] [-h] <image_file>
 
 
