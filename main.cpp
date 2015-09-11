@@ -256,7 +256,7 @@ bool unpackFiles(std::string sDest) {
     spiffs_dirent ent;
 
     // Add "./" to path if is not given.
-    if (sDest.find("./") == std::string::npos) {
+    if (sDest.find("./") == std::string::npos && sDest.find("/") == std::string::npos) {
         sDest = "./" + sDest;
     }
 
