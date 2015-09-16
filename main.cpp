@@ -149,9 +149,9 @@ int addFiles(const char* dirname, const char* subPath) {
     // Open directory
     if ((dir = opendir (dirPath.c_str())) != NULL) {
 
-    	// Read files from directory.
+        // Read files from directory.
         while ((ent = readdir (dir)) != NULL) {
-        	// Ignore dir itself.
+            // Ignore dir itself.
             if (ent->d_name[0] == '.')
                 continue;
 
@@ -238,6 +238,32 @@ bool dirExists(const char* path) {
 }
 
 /**
+ * @brief Create directory if it not exists.
+ * @param path Directory path.
+ * @return True or false.
+ *
+ * @author Pascal Gollor (http://www.pgollor.de/cms/)
+ */
+bool dirCreate(const char* path) {
+    // Check if directory also exists.
+    if (dirExists(path)) {
+	    return false;
+    }
+
+    // platform stuff...
+#if defined(_WIN32)
+    if (_mkdir(sDest.c_str()) != 0) {
+#else
+    if (mkdir(path, S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH) != 0) {
+#endif
+	    std::cerr << "Can not create directory!!!" << std::endl;
+		return false;
+    }
+
+    return true;
+}
+
+/**
  * @brief Unpack file from file system.
  * @param spiffsFile SPIFFS dir entry pointer.
  * @param destPath Destination file path path.
@@ -294,13 +320,7 @@ bool unpackFiles(std::string sDest) {
         std::cout << "Directory " << sDest << " does not exists. Try to create it." << std::endl;
 
         // Try to create directory.
-        // platform stuff...
-#if defined(_WIN32)
-        if (_mkdir(sDest.c_str()) != 0) {
-#else
-        if (mkdir(sDest.c_str(), S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH) != 0) {
-#endif
-            std::cerr << "Can not create directory!!!" << std::endl;
+        if (! dirCreate(sDest.c_str())) {
             return false;
         }
     }
@@ -313,7 +333,23 @@ bool unpackFiles(std::string sDest) {
     while (it) {
         // Check if content is a file.
         if ((int)(it->type) == 1) {
-            std::string sDestFilePath = sDest + (const char*)(it->name);
+            std::string name = (const char*)(it->name);
+            std::string sDestFilePath = sDest + name;
+            size_t pos = name.find_last_of("/");
+
+            // If file is in sub directory?
+            if (pos > 0) {
+                // Subdir path.
+                std::string path = sDest;
+                path += name.substr(0, pos);
+
+                // Create subddir if subdir not exists.
+                if (!dirExists(path.c_str())) {
+                    if (!dirCreate(path.c_str())) {
+                        return false;
+                    }
+                }
+            }
 
             // Unpack file to destination directory.
             if (! unpackFile(it, sDestFilePath.c_str()) ) {
@@ -331,8 +367,9 @@ bool unpackFiles(std::string sDest) {
                 << std::endl;
         }
 
+        // Get next file handle.
         it = SPIFFS_readdir(&dir, &ent);
-    }
+    } // end while
 
     // Close directory.
     SPIFFS_closedir(&dir);
