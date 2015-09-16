@@ -139,38 +139,67 @@ int addFile(char* name, const char* path) {
     return 0;
 }
 
-int addFiles(const char* dirname){
+int addFiles(const char* dirname, const char* subPath) {
     DIR *dir;
     struct dirent *ent;
     bool error = false;
-    if ((dir = opendir (dirname)) != NULL) {
+    std::string dirPath = dirname;
+    dirPath += subPath;
+
+    // Open directory
+    if ((dir = opendir (dirPath.c_str())) != NULL) {
+
+    	// Read files from directory.
         while ((ent = readdir (dir)) != NULL) {
+        	// Ignore dir itself.
             if (ent->d_name[0] == '.')
                 continue;
-            std::string fullpath = dirname;
-            fullpath += '/';
+
+            std::string fullpath = dirPath;
             fullpath += ent->d_name;
             struct stat path_stat;
             stat (fullpath.c_str(), &path_stat);
+
             if (!S_ISREG(path_stat.st_mode)) {
-                std::cerr << "skipping " << ent->d_name << std::endl;
-                continue;
+                // Check if path is a directory.
+                if (S_ISDIR(path_stat.st_mode)) {
+                    // Prepare new sub path.
+                    std::string newSubPath = subPath;
+                    newSubPath += ent->d_name;
+                    newSubPath += "/";
+
+                    if (addFiles(dirname, newSubPath.c_str()) != 0)
+                    {
+                        std::cerr << "Error for adding content from " << ent->d_name << "!" << std::endl;
+                    }
+
+                    continue;
+                }
+                else
+                {
+                    std::cerr << "skipping " << ent->d_name << std::endl;
+                    continue;
+                }
             }
 
-            std::string filepath = "/";
+            // Filepath with dirname as root folder.
+            std::string filepath = subPath;
             filepath += ent->d_name;
             std::cout << filepath << std::endl;
+
+            // Add File to image.
             if (addFile((char*)filepath.c_str(), fullpath.c_str()) != 0) {
                 std::cerr << "error adding file!" << std::endl;
                 error = true;
                 break;
             }
-        }
+        } // end while
         closedir (dir);
     } else {
         std::cerr << "warning: can't read source directory" << std::endl;
         return 1;
     }
+
     return (error) ? 1 : 0;
 }
 
@@ -256,7 +285,7 @@ bool unpackFiles(std::string sDest) {
     spiffs_dirent ent;
 
     // Add "./" to path if is not given.
-    if (sDest.find("./") == std::string::npos) {
+    if (sDest.find("./") == std::string::npos && sDest.find("/") == std::string::npos) {
         sDest = "./" + sDest;
     }
 
@@ -323,7 +352,7 @@ int actionPack() {
     }
 
     spiffsFormat();
-    int result = addFiles(s_dirName.c_str());
+    int result = addFiles(s_dirName.c_str(), "/");
     spiffsUnmount();
 
     fwrite(&s_flashmem[0], 4, s_flashmem.size()/4, fdres);
