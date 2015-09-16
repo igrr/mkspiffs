@@ -252,7 +252,7 @@ bool dirCreate(const char* path) {
 
     // platform stuff...
 #if defined(_WIN32)
-    if (_mkdir(sDest.c_str()) != 0) {
+    if (_mkdir(path) != 0) {
 #else
     if (mkdir(path, S_IRWXU | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH) != 0) {
 #endif
