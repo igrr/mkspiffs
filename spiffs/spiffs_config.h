@@ -41,19 +41,19 @@ typedef uint8_t u8_t;
 // compile time switches
 
 // Set generic spiffs debug output call.
-#ifndef SPIFFS_DGB
+#ifndef SPIFFS_DBG
 #define SPIFFS_DBG(...) //printf(__VA_ARGS__)
 #endif
 // Set spiffs debug output call for garbage collecting.
-#ifndef SPIFFS_GC_DGB
+#ifndef SPIFFS_GC_DBG
 #define SPIFFS_GC_DBG(...) //printf(__VA_ARGS__)
 #endif
 // Set spiffs debug output call for caching.
-#ifndef SPIFFS_CACHE_DGB
+#ifndef SPIFFS_CACHE_DBG
 #define SPIFFS_CACHE_DBG(...) //printf(__VA_ARGS__)
 #endif
 // Set spiffs debug output call for system consistency checks.
-#ifndef SPIFFS_CHECK_DGB
+#ifndef SPIFFS_CHECK_DBG
 #define SPIFFS_CHECK_DBG(...) //printf(__VA_ARGS__)
 #endif
 
@@ -142,11 +142,11 @@ typedef uint8_t u8_t;
 // SPIFFS_LOCK and SPIFFS_UNLOCK protects spiffs from reentrancy on api level
 // These should be defined on a multithreaded system
 
-// define this to entering a mutex if you're running on a multithreaded system
+// define this to enter a mutex if you're running on a multithreaded system
 #ifndef SPIFFS_LOCK
 #define SPIFFS_LOCK(fs)
 #endif
-// define this to exiting a mutex if you're running on a multithreaded system
+// define this to exit a mutex if you're running on a multithreaded system
 #ifndef SPIFFS_UNLOCK
 #define SPIFFS_UNLOCK(fs)
 #endif
@@ -184,7 +184,22 @@ typedef uint8_t u8_t;
 #define SPIFFS_ALIGNED_OBJECT_INDEX_TABLES       1
 #endif
 
-// Set SPFIFS_TEST_VISUALISATION to non-zero to enable SPIFFS_vis function
+// Enable this if you want the HAL callbacks to be called with the spiffs struct
+#ifndef SPIFFS_HAL_CALLBACK_EXTRA
+#define SPIFFS_HAL_CALLBACK_EXTRA         0
+#endif
+
+// Enable this if you want to add an integer offset to all file handles
+// (spiffs_file). This is useful if running multiple instances of spiffs on
+// same target, in order to recognise to what spiffs instance a file handle
+// belongs.
+// NB: This adds config field fh_ix_offset in the configuration struct when
+// mounting, which must be defined.
+#ifndef SPIFFS_FILEHDL_OFFSET
+#define SPIFFS_FILEHDL_OFFSET                 0
+#endif
+
+// Set SPIFFS_TEST_VISUALISATION to non-zero to enable SPIFFS_vis function
 // in the api. This function will visualize all filesystem using given printf
 // function.
 #ifndef SPIFFS_TEST_VISUALISATION
