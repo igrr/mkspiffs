@@ -2,7 +2,6 @@
 Tool to build and unpack [SPIFFS](https://github.com/pellepl/spiffs) images.
 
 
-
 ## Usage
 
 ```
@@ -55,7 +54,7 @@ Where:
 ```
 ## Build
 
-You need gcc (>= 4.8) and make. On Windows, use MinGW.
+You need gcc (≥4.8) or clang(≥600.0.57), and make. On Windows, use MinGW.
 
 Run:
 ```bash
@@ -75,7 +74,7 @@ MIT
 
 ## To do
 
-- [ ] Add more denug output and print spiffs debug output
+- [ ] Add more debug output and print SPIFFS debug output
 - [ ] Error handling
 - [ ] Determine the image size automatically when opening a file
 - [ ] Code cleanup
