@@ -7,11 +7,12 @@ Tool to build and unpack [SPIFFS](https://github.com/pellepl/spiffs) images.
 
 ```
 
-   ./mkspiffs   {-c <pack_dir>|-u <dest_dir>|-l|-i} [-b <number>] [-p <number>] [-s
-               <number>] [--] [--version] [-h] <image_file>
+   mkspiffs  {-c <pack_dir>|-u <dest_dir>|-l|-i} [-d <0-5>] [-b <number>]
+             [-p <number>] [-s <number>] [--] [--version] [-h]
+             <image_file>
 
 
-Where:
+Where: 
 
    -c <pack_dir>,  --create <pack_dir>
      (OR required)  create spiffs image from a directory
@@ -25,6 +26,9 @@ Where:
    -i,  --visualize
      (OR required)  visualize spiffs image
 
+
+   -d <0-5>,  --debug <0-5>
+     Debug level. 0 means no debug output.
 
    -b <number>,  --block <number>
      fs block size, in bytes
@@ -71,6 +75,7 @@ MIT
 
 ## To do
 
-- Error handling
-- Determine the image size automatically when opening a file
-- Code cleanup
+- [ ] Add more denug output and print spiffs debug output
+- [ ] Error handling
+- [ ] Determine the image size automatically when opening a file
+- [ ] Code cleanup

@@ -55,6 +55,9 @@ static s32_t api_spiffs_erase(u32_t addr, u32_t size){
 }
 
 
+int g_debugLevel = 0;
+
+
 //implementation
 
 int spiffsTryMount(){
@@ -113,20 +116,40 @@ int addFile(char* name, const char* path) {
 
     spiffs_file dst = SPIFFS_open(&s_fs, name, SPIFFS_CREAT | SPIFFS_TRUNC | SPIFFS_RDWR, 0);
 
+    // read file size
     fseek(src, 0, SEEK_END);
     size_t size = ftell(src);
     fseek(src, 0, SEEK_SET);
+
+    if (g_debugLevel > 0) {
+        std::cout << "file size: " << size << std::endl;
+    }
 
     size_t left = size;
     uint8_t data_byte;
     while (left > 0){
         if (1 != fread(&data_byte, 1, 1, src)) {
+            std::cerr << "fread error!" << std::endl;
+
             fclose(src);
             SPIFFS_close(&s_fs, dst);
             return 1;
         }
         int res = SPIFFS_write(&s_fs, dst, &data_byte, 1);
         if (res < 0) {
+            std::cerr << "SPIFFS_write error(" << s_fs.err_code << "): ";
+
+            if (s_fs.err_code == SPIFFS_ERR_FULL) {
+                std::cerr << "File system is full." << std::endl;
+            } else {
+                std::cerr << "unknown";
+            }
+            std::cerr << std::endl;
+
+            if (g_debugLevel > 0) {
+                std::cout << "data left: " << left << std::endl;
+            }
+
             fclose(src);
             SPIFFS_close(&s_fs, dst);
             return 1;
@@ -136,6 +159,7 @@ int addFile(char* name, const char* path) {
 
     SPIFFS_close(&s_fs, dst);
     fclose(src);
+
     return 0;
 }
 
@@ -191,6 +215,9 @@ int addFiles(const char* dirname, const char* subPath) {
             if (addFile((char*)filepath.c_str(), fullpath.c_str()) != 0) {
                 std::cerr << "error adding file!" << std::endl;
                 error = true;
+                if (g_debugLevel > 0) {
+                    std::cout << std::endl;
+                }
                 break;
             }
         } // end while
@@ -485,14 +512,21 @@ void processArgs(int argc, const char** argv) {
     TCLAP::ValueArg<int> imageSizeArg( "s", "size", "fs image size, in bytes", false, 0x10000, "number" );
     TCLAP::ValueArg<int> pageSizeArg( "p", "page", "fs page size, in bytes", false, 256, "number" );
     TCLAP::ValueArg<int> blockSizeArg( "b", "block", "fs block size, in bytes", false, 4096, "number" );
+    TCLAP::ValueArg<int> debugArg( "d", "debug", "Debug level. 0 means no debug output.", false, 0, "0-5" );
 
     cmd.add( imageSizeArg );
     cmd.add( pageSizeArg );
     cmd.add( blockSizeArg );
+    cmd.add(debugArg);
     std::vector<TCLAP::Arg*> args = {&packArg, &unpackArg, &listArg, &visualizeArg};
     cmd.xorAdd( args );
     cmd.add( outNameArg );
     cmd.parse( argc, argv );
+
+    if (debugArg.getValue() > 0) {
+        std::cout << "Debug output enabled" << std::endl;
+        g_debugLevel = debugArg.getValue();
+    }
 
     if (packArg.isSet()) {
         s_dirName = packArg.getValue();
