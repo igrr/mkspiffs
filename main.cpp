@@ -365,7 +365,7 @@ bool unpackFiles(std::string sDest) {
             size_t pos = name.find_last_of("/");
 
             // If file is in sub directory?
-            if (pos > 0) {
+            if (pos != std::string::npos) {
                 // Subdir path.
                 std::string path = sDest;
                 path += name.substr(0, pos);
