@@ -175,9 +175,11 @@ int addFiles(const char* dirname, const char* subPath) {
 
         // Read files from directory.
         while ((ent = readdir (dir)) != NULL) {
+
             // Ignore dir itself.
-            if (ent->d_name[0] == '.')
+            if ((strcmp(ent->d_name, ".") == 0) || (strcmp(ent->d_name, "..") == 0)) {
                 continue;
+            }
 
             std::string fullpath = dirPath;
             fullpath += ent->d_name;
