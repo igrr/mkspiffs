@@ -21,6 +21,7 @@ else
 		ifneq ($(filter %86,$(UNAME_P)),)
 			DIST_SUFFIX := linux32
 		endif
+		TARGET_CXXFLAGS = -std=c++11
 	endif
 	ifeq ($(UNAME_S),Darwin)
 		TARGET_OS := OSX
