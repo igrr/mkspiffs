@@ -364,10 +364,10 @@ bool unpackFiles(std::string sDest) {
         if ((int)(it->type) == 1) {
             std::string name = (const char*)(it->name);
             std::string sDestFilePath = sDest + name;
-            size_t pos = name.find_last_of("/");
+            size_t pos = name.find_first_of("/", 1);
 
-            // If file is in sub directory?
-            if (pos != std::string::npos) {
+            // If file is in sub directories?
+            while (pos != std::string::npos) {
                 // Subdir path.
                 std::string path = sDest;
                 path += name.substr(0, pos);
@@ -378,6 +378,8 @@ bool unpackFiles(std::string sDest) {
                         return false;
                     }
                 }
+
+                pos = name.find_first_of("/", pos + 1);
             }
 
             // Unpack file to destination directory.
