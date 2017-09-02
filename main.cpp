@@ -175,9 +175,11 @@ int addFiles(const char* dirname, const char* subPath) {
 
         // Read files from directory.
         while ((ent = readdir (dir)) != NULL) {
+
             // Ignore dir itself.
-            if (ent->d_name[0] == '.')
+            if ((strcmp(ent->d_name, ".") == 0) || (strcmp(ent->d_name, "..") == 0)) {
                 continue;
+            }
 
             std::string fullpath = dirPath;
             fullpath += ent->d_name;
@@ -365,7 +367,7 @@ bool unpackFiles(std::string sDest) {
             size_t pos = name.find_last_of("/");
 
             // If file is in sub directory?
-            if (pos > 0) {
+            if (pos != std::string::npos) {
                 // Subdir path.
                 std::string path = sDest;
                 path += name.substr(0, pos);
