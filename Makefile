@@ -1,5 +1,5 @@
-CFLAGS		?= -std=gnu99 -Os -Wall
-CXXFLAGS	?= -std=gnu++11 -Os -Wall
+CFLAGS = -std=gnu99 -Os -Wall $(CFLAGS)
+CXXFLAGS = -std=gnu++11 -Os -Wall $(CXXFLAGS)
 
 ifeq ($(OS),Windows_NT)
 	TARGET_OS := WINDOWS
