@@ -9,7 +9,8 @@ ifeq ($(OS),Windows_NT)
 	TARGET := mkspiffs.exe
 	TARGET_CFLAGS := -mno-ms-bitfields
 	TARGET_LDFLAGS := -Wl,-static -static-libgcc
-
+	CC=gcc
+	CXX=g++
 else
 	UNAME_S := $(shell uname -s)
 	ifeq ($(UNAME_S),Linux)
