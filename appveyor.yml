@@ -20,7 +20,7 @@ deploy:
     release: $(PRODUCT_VERSION)
     provider: GitHub
     auth_token:
-        secure: 'PGg5fnoBpP1Omzr6f3KIYDiD8J30rretQjSl/MITRpzvSCmN88kM6VDMz1TBGZTA'
+        secure: 'exejPglIPIQteWFNOUBqPhMxVjA84wktH0xF4rI/IVcsD9UG0Wc/M/xzIl/sie9h'
     artifact: /.*\.zip/
     draft: true
     prerelease: false
