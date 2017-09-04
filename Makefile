@@ -1,6 +1,3 @@
-CFLAGS = -std=gnu99 -Os -Wall $(CFLAGS)
-CXXFLAGS = -std=gnu++11 -Os -Wall $(CXXFLAGS)
-
 ifeq ($(OS),Windows_NT)
 	TARGET_OS := WINDOWS
 	DIST_SUFFIX := windows
@@ -48,11 +45,10 @@ OBJ		:= main.o \
 
 INCLUDES := -Itclap -Ispiffs -I.
 
-CFLAGS   += $(TARGET_CFLAGS)
-CXXFLAGS += $(TARGET_CXXFLAGS)
-LDFLAGS  += $(TARGET_LDFLAGS)
-
-CPPFLAGS += $(INCLUDES) -D$(TARGET_OS) -DVERSION=\"$(VERSION)\" -D__NO_INLINE__
+override CFLAGS := -std=gnu99 -Os -Wall $(TARGET_CFLAGS) $(CFLAGS)
+override CXXFLAGS := -std=gnu++11 -Os -Wall $(TARGET_CXXFLAGS) $(CXXFLAGS)
+override LDFLAGS := $(TARGET_LDFLAGS) $(LDFLAGS)
+override CPPFLAGS := $(INCLUDES) -D$(TARGET_OS) -DVERSION=\"$(VERSION)\" -D__NO_INLINE__ $(CPPFLAGS)
 
 DIST_NAME := mkspiffs-$(VERSION)-$(DIST_SUFFIX)
 DIST_DIR := $(DIST_NAME)
