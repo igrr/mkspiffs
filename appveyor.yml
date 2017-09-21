@@ -11,7 +11,11 @@ matrix:
 
 build_script:
     - SET PATH=C:\MinGW\bin;C:\MinGW\msys\1.0\bin;%PATH%
+    # Build default configuration
     - make dist
+    # Build configuration with SPIFFS_USE_MAGIC_LENGTH=0 (legacy version)
+    - make clean
+    - make dist BUILD_CONFIG_NAME="-no_magic_length" CFLAGS="-DSPIFFS_USE_MAGIC_LENGTH=0"
 
 artifacts:
   - path: '*.zip'
