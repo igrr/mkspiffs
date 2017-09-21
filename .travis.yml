@@ -7,7 +7,12 @@ addons:
       - g++-4.8
 script:
   - export CXX="g++-4.8" CC="gcc-4.8"
+  # Build default configuration
   - make dist
+  # Build configuration with SPIFFS_USE_MAGIC_LENGTH=0 (legacy version)
+  - make clean
+  - make dist BUILD_CONFIG_NAME="-no_magic_length" CFLAGS="-DSPIFFS_USE_MAGIC_LENGTH=0"
+
 notifications:
   email:
     recipients:
@@ -19,7 +24,8 @@ deploy:
   skip_cleanup: true
   api_key:
     secure: "AdgaAHsU3xkyKqcZu6Yp3njmWTXFm/Ggsq9n6cC9byHTDdcQ6UqdX1gPzud53YkSDbUjst5vok0i9xywH2pFWVt6G+FAD5uI/h1IiacQQ9rjnDef++nz+KkZtsPUhAD8LOdKPvJ7TmNNnkN35VFqyQETr/18bdzGC0tEZQK2BFQQrdz6cOGeez1ADYal0LAVHHcfolnwZb9jCT51nPEpSMlhxwSNNFncG2Y8MLDT2Q1y0xR3iI6aSSkMxqWCYYIdEC12rffwyRbC2P+JXp+AXNayLuKjCFnWB/QIyvrvoXtwbAEfW1pZzrWZAI5fI6zQaKKjixhf3Kr1f7y/xSPSdsPemdakRgANRTZW0R6wiXxUsTEjVGV6fWqUKT9pm335k8vWq2i+6exSrIVmYyxz4J3u6+Mgdbij5hI1NLVLq+It0KUVt99IOWaTOy01y6a0m1AprYYPgyw7fwlgChMPsLcaRrq1gtjtJr7wQKLaIlfYdEB4b0DtE/fx+b78mMQqXS/WvwSUGkJ5C2poLX2zdUxFe3phjeL3P0Daa0gLDQ2tCf/VmvPy20//b7MaO10URoeeV16fs+2BFzLjh38kzLRrPaRcBcwQFlzI1P+4mWPRDMuKvBn6i0sodFEzlUQMFSa8xyVtE5wIDLqepeG/9roW8woKIAmwG1k1YtM3XeE="
-  file: mkspiffs-$TRAVIS_TAG-linux64.tar.gz
+  file_glob: true
+  file: mkspiffs-$TRAVIS_TAG-*linux64.tar.gz
   on:
     repo: igrr/mkspiffs
     tags: true
