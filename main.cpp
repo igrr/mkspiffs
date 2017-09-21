@@ -38,6 +38,16 @@ static std::vector<uint8_t> s_spiffsWorkBuf;
 static std::vector<uint8_t> s_spiffsFds;
 static std::vector<uint8_t> s_spiffsCache;
 
+static int s_debugLevel = 0;
+static bool s_addAllFiles;
+
+// Unless -a flag is given, these files/directories will not be included into the image
+static const char* ignored_file_names[] = {
+    ".DS_Store",
+    ".git",
+    ".gitignore",
+    ".gitmodules"
+};
 
 static s32_t api_spiffs_read(u32_t addr, u32_t size, u8_t *dst){
     memcpy(dst, &s_flashmem[0] + addr, size);
@@ -55,7 +65,6 @@ static s32_t api_spiffs_erase(u32_t addr, u32_t size){
 }
 
 
-int g_debugLevel = 0;
 
 
 //implementation
@@ -121,7 +130,7 @@ int addFile(char* name, const char* path) {
     size_t size = ftell(src);
     fseek(src, 0, SEEK_SET);
 
-    if (g_debugLevel > 0) {
+    if (s_debugLevel > 0) {
         std::cout << "file size: " << size << std::endl;
     }
 
@@ -146,7 +155,7 @@ int addFile(char* name, const char* path) {
             }
             std::cerr << std::endl;
 
-            if (g_debugLevel > 0) {
+            if (s_debugLevel > 0) {
                 std::cout << "data left: " << left << std::endl;
             }
 
@@ -179,6 +188,21 @@ int addFiles(const char* dirname, const char* subPath) {
             // Ignore dir itself.
             if ((strcmp(ent->d_name, ".") == 0) || (strcmp(ent->d_name, "..") == 0)) {
                 continue;
+            }
+
+            if (!s_addAllFiles) {
+                bool skip = false;
+                size_t ignored_file_names_count = sizeof(ignored_file_names) / sizeof(ignored_file_names[0]);
+                for (size_t i = 0; i < ignored_file_names_count; ++i) {
+                    if (strcmp(ent->d_name, ignored_file_names[i]) == 0) {
+                        std::cerr << "skipping " << ent->d_name << std::endl;
+                        skip = true;
+                        break;
+                    }
+                }
+                if (skip) {
+                    continue;
+                }
             }
 
             std::string fullpath = dirPath;
@@ -217,7 +241,7 @@ int addFiles(const char* dirname, const char* subPath) {
             if (addFile((char*)filepath.c_str(), fullpath.c_str()) != 0) {
                 std::cerr << "error adding file!" << std::endl;
                 error = true;
-                if (g_debugLevel > 0) {
+                if (s_debugLevel > 0) {
                     std::cout << std::endl;
                 }
                 break;
@@ -516,12 +540,14 @@ void processArgs(int argc, const char** argv) {
     TCLAP::ValueArg<int> imageSizeArg( "s", "size", "fs image size, in bytes", false, 0x10000, "number" );
     TCLAP::ValueArg<int> pageSizeArg( "p", "page", "fs page size, in bytes", false, 256, "number" );
     TCLAP::ValueArg<int> blockSizeArg( "b", "block", "fs block size, in bytes", false, 4096, "number" );
+    TCLAP::SwitchArg addAllFilesArg( "a", "all-files", "when creating an image, include files which are normally ignored; currently only applies to '.DS_Store' files and '.git' directories", false);
     TCLAP::ValueArg<int> debugArg( "d", "debug", "Debug level. 0 means no debug output.", false, 0, "0-5" );
 
     cmd.add( imageSizeArg );
     cmd.add( pageSizeArg );
     cmd.add( blockSizeArg );
-    cmd.add(debugArg);
+    cmd.add( addAllFilesArg );
+    cmd.add( debugArg );
     std::vector<TCLAP::Arg*> args = {&packArg, &unpackArg, &listArg, &visualizeArg};
     cmd.xorAdd( args );
     cmd.add( outNameArg );
@@ -529,7 +555,7 @@ void processArgs(int argc, const char** argv) {
 
     if (debugArg.getValue() > 0) {
         std::cout << "Debug output enabled" << std::endl;
-        g_debugLevel = debugArg.getValue();
+        s_debugLevel = debugArg.getValue();
     }
 
     if (packArg.isSet()) {
@@ -548,6 +574,7 @@ void processArgs(int argc, const char** argv) {
     s_imageSize = imageSizeArg.getValue();
     s_pageSize  = pageSizeArg.getValue();
     s_blockSize = blockSizeArg.getValue();
+    s_addAllFiles = addAllFilesArg.isSet();
 }
 
 int main(int argc, const char * argv[]) {
