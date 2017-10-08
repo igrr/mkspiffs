@@ -39,13 +39,13 @@ endif
 VERSION ?= $(shell git describe --always)
 
 OBJ		:= main.o \
-		   spiffs/spiffs_cache.o \
-		   spiffs/spiffs_check.o \
-		   spiffs/spiffs_gc.o \
-		   spiffs/spiffs_hydrogen.o \
-		   spiffs/spiffs_nucleus.o \
+		   spiffs/src/spiffs_cache.o \
+		   spiffs/src/spiffs_check.o \
+		   spiffs/src/spiffs_gc.o \
+		   spiffs/src/spiffs_hydrogen.o \
+		   spiffs/src/spiffs_nucleus.o \
 
-INCLUDES := -Itclap -Ispiffs -I.
+INCLUDES := -Itclap -Iinclude -Ispiffs/src -I.
 
 override CFLAGS := -std=gnu99 -Os -Wall $(TARGET_CFLAGS) $(CFLAGS)
 override CXXFLAGS := -std=gnu++11 -Os -Wall $(TARGET_CXXFLAGS) $(CXXFLAGS)
