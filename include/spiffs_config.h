@@ -15,6 +15,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
+#include <stdint.h>
+#include <stdbool.h>
 #include <unistd.h>
 
 // Set generic spiffs debug output call.
