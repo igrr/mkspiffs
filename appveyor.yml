@@ -10,6 +10,7 @@ matrix:
     fast_finish: true
 
 build_script:
+    - git submodule update --init --recursive
     - SET PATH=C:\MinGW\bin;C:\MinGW\msys\1.0\bin;%PATH%
     # Build default configuration
     - make dist
