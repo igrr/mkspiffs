@@ -39,13 +39,13 @@ endif
 VERSION ?= $(shell git describe --always)
 
 OBJ		:= main.o \
-		   spiffs/spiffs_cache.o \
-		   spiffs/spiffs_check.o \
-		   spiffs/spiffs_gc.o \
-		   spiffs/spiffs_hydrogen.o \
-		   spiffs/spiffs_nucleus.o \
+		   spiffs/src/spiffs_cache.o \
+		   spiffs/src/spiffs_check.o \
+		   spiffs/src/spiffs_gc.o \
+		   spiffs/src/spiffs_hydrogen.o \
+		   spiffs/src/spiffs_nucleus.o \
 
-INCLUDES := -Itclap -Ispiffs -I.
+INCLUDES := -Itclap -Iinclude -Ispiffs/src -I.
 
 override CFLAGS := -std=gnu99 -Os -Wall $(TARGET_CFLAGS) $(CFLAGS)
 override CXXFLAGS := -std=gnu++11 -Os -Wall $(TARGET_CXXFLAGS) $(CXXFLAGS)
@@ -74,26 +74,27 @@ $(DIST_DIR):
 	@mkdir -p $@
 
 clean:
-	@rm -f *.o
-	@rm -f spiffs/*.o
-	@rm -f $(TARGET)
+	@rm -f $(TARGET) $(OBJ)
 
 SPIFFS_TEST_FS_CONFIG := -s 0x100000 -p 512 -b 0x2000
 
 test: $(TARGET)
-	rm -rf spiffs/.git
-	rm -f spiffs/.DS_Store
-	ls -1 spiffs > out.list0
-	touch spiffs/.DS_Store
-	mkdir -p spiffs/.git
-	touch spiffs/.git/foo
-	./mkspiffs -c spiffs $(SPIFFS_TEST_FS_CONFIG) out.spiffs | sort | sed s/^\\/// > out.list1
-	./mkspiffs -u spiffs_u $(SPIFFS_TEST_FS_CONFIG) out.spiffs | sort | sed s/^\\/// > out.list_u
-	./mkspiffs -l $(SPIFFS_TEST_FS_CONFIG) out.spiffs | cut -f 2 | sort | sed s/^\\/// > out.list2
+	mkdir -p spiffs_t
+	cp spiffs/src/*.h spiffs_t/
+	cp spiffs/src/*.c spiffs_t/
+	rm -rf spiffs_t/.git
+	rm -f spiffs_t/.DS_Store
+	ls -1 spiffs_t > out.list0
+	touch spiffs_t/.DS_Store
+	mkdir -p spiffs_t/.git
+	touch spiffs_t/.git/foo
+	./mkspiffs -c spiffs_t $(SPIFFS_TEST_FS_CONFIG) out.spiffs_t | sort | sed s/^\\/// > out.list1
+	./mkspiffs -u spiffs_u $(SPIFFS_TEST_FS_CONFIG) out.spiffs_t | sort | sed s/^\\/// > out.list_u
+	./mkspiffs -l $(SPIFFS_TEST_FS_CONFIG) out.spiffs_t | cut -f 2 | sort | sed s/^\\/// > out.list2
 	diff --strip-trailing-cr out.list0 out.list1
 	diff --strip-trailing-cr out.list0 out.list2
-	rm -rf spiffs/.git
-	rm -f spiffs/.DS_Store
-	diff spiffs spiffs_u
-	rm -f out.{list0,list1,list2,list_u,spiffs}
-	rm -R spiffs_u
+	rm -rf spiffs_t/.git
+	rm -f spiffs_t/.DS_Store
+	diff spiffs_t spiffs_u
+	rm -f out.{list0,list1,list2,list_u,spiffs_t}
+	rm -R spiffs_u spiffs_t

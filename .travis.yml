@@ -6,12 +6,13 @@ addons:
     packages:
       - g++-4.8
 script:
+  - git submodule update --init --recursive
   - export CXX="g++-4.8" CC="gcc-4.8"
   # Build default configuration
   - make dist
   # Build configuration with SPIFFS_USE_MAGIC_LENGTH=0 (legacy version)
   - make clean
-  - make dist BUILD_CONFIG_NAME="-no_magic_length" CFLAGS="-DSPIFFS_USE_MAGIC_LENGTH=0"
+  - make dist BUILD_CONFIG_NAME="-no_magic_length" CFLAGS="-DSPIFFS_USE_MAGIC_LENGTH=0 -DSPIFFS_ALIGNED_OBJECT_INDEX_TABLES=1"
 
 notifications:
   email:

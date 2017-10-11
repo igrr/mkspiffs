@@ -8,7 +8,7 @@
 #define TCLAP_SETBASE_ZERO 1
 
 #include <iostream>
-#include "spiffs/spiffs.h"
+#include "spiffs.h"
 #include <vector>
 #include <dirent.h>
 #include <sys/types.h>
