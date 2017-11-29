@@ -435,6 +435,11 @@ bool unpackFiles(std::string sDest) {
 // Actions
 
 int actionPack() {
+    if (!dirExists(s_dirName.c_str())) {
+        std::cerr << "warning: can't read source directory" << std::endl;
+        return 1;
+    }
+    
     s_flashmem.resize(s_imageSize, 0xff);
 
     FILE* fdres = fopen(s_imageName.c_str(), "wb");
