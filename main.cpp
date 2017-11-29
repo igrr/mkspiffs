@@ -436,7 +436,7 @@ bool unpackFiles(std::string sDest) {
 
 int actionPack() {
     if (!dirExists(s_dirName.c_str())) {
-        std::cerr << "warning: can't read source directory" << std::endl;
+        std::cerr << "error: can't read source directory" << std::endl;
         return 1;
     }
     
