@@ -16,10 +16,10 @@ else
 		TARGET_OS := LINUX
 		UNAME_P := $(shell uname -p)
 		ifeq ($(UNAME_P),x86_64)
-			DIST_SUFFIX := linux64
+			DIST_SUFFIX ?= linux64
 		endif
 		ifneq ($(filter %86,$(UNAME_P)),)
-			DIST_SUFFIX := linux32
+			DIST_SUFFIX ?= linux32
 		endif
 	endif
 	ifeq ($(UNAME_S),Darwin)
