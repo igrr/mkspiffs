@@ -1,6 +1,10 @@
 # mkspiffs
 Tool to build and unpack [SPIFFS](https://github.com/pellepl/spiffs) images.
 
+**IMPORTANT**
+The **sdkconfig.h** from your application using spiffs is used in build process!
+Before building **mkspiffs**, copy the **sdkconfig.h** from your application **build/include** directory to **mkspiffs/include**
+
 
 ## Usage
 
