@@ -192,10 +192,9 @@ static int get_spiffs_stat(const char * path, struct stat * st)
 #ifdef CONFIG_SPIFFS_USE_DIR
     spiffs_meta_t *meta = (spiffs_meta_t *)&s.meta;
     if (meta->type == SPIFFS_TYPE_DIR) st->st_mode = S_IFDIR;
-    else st->st_mode = S_IRWXU | S_IRWXG | S_IRWXO | S_IFREG;
+    else st->st_mode = S_IFREG;
 #else
-    st->st_mode = S_IRWXU | S_IRWXG | S_IRWXO;
-    st->st_mode |= (s.type == SPIFFS_TYPE_DIR)?S_IFDIR:S_IFREG;
+    st->st_mode = (s.type == SPIFFS_TYPE_DIR)?S_IFDIR:S_IFREG;
 #endif
     st->st_mtime = spiffs_get_mtime(&s);
     st->st_atime = 0;
