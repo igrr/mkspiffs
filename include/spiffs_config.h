@@ -78,17 +78,13 @@ typedef uint8_t u8_t;
 
 // Enables/disable memory read caching of nucleus file system operations.
 // If enabled, memory area must be provided for cache in SPIFFS_mount.
-#ifndef  SPIFFS_CACHE
-#ifndef CONFIG_SPIFFS_CACHE
-#define SPIFFS_CACHE                (0)
-#else
+#ifndef SPIFFS_CACHE
 #define SPIFFS_CACHE                (1)
-#endif
 #endif
 
 #if SPIFFS_CACHE
 // Enables memory write caching for file descriptors in hydrogen
-#ifndef  SPIFFS_CACHE_WR
+#ifndef SPIFFS_CACHE_WR
 #ifndef CONFIG_SPIFFS_CACHE_WR
 #define SPIFFS_CACHE_WR             (0)
 #else
@@ -97,7 +93,7 @@ typedef uint8_t u8_t;
 #endif
 
 // Enable/disable statistics on caching. Debug/test purpose only.
-#ifndef  SPIFFS_CACHE_STATS
+#ifndef SPIFFS_CACHE_STATS
 #ifdef CONFIG_SPIFFS_CACHE_STATS
 #define SPIFFS_CACHE_STATS          (1)
 #else
@@ -183,10 +179,12 @@ typedef uint8_t u8_t;
 // a magic in all sectors to determine if this is a valid spiffs system or
 // not on mount point. If not, SPIFFS_format must be called prior to mounting
 // again.
-#ifdef CONFIG_SPIFFS_USE_MAGIC
-#define SPIFFS_USE_MAGIC                (1)
-#else
+#ifndef SPIFFS_USE_MAGIC
+#ifndef CONFIG_SPIFFS_USE_MAGIC
 #define SPIFFS_USE_MAGIC                (0)
+#else
+#define SPIFFS_USE_MAGIC                (1)
+#endif
 #endif
 
 #if SPIFFS_USE_MAGIC
