@@ -72,37 +72,48 @@ typedef uint8_t u8_t;
 // Enable/disable API functions to determine exact number of bytes
 // for filedescriptor and cache buffers. Once decided for a configuration,
 // this can be disabled to reduce flash.
+#ifndef SPIFFS_BUFFER_HELP
 #define SPIFFS_BUFFER_HELP              0
+#endif
 
 // Enables/disable memory read caching of nucleus file system operations.
 // If enabled, memory area must be provided for cache in SPIFFS_mount.
-#ifdef CONFIG_SPIFFS_CACHE
-#define SPIFFS_CACHE                (1)
-#else
+#ifndef  SPIFFS_CACHE
+#ifndef CONFIG_SPIFFS_CACHE
 #define SPIFFS_CACHE                (0)
+#else
+#define SPIFFS_CACHE                (1)
 #endif
+#endif
+
 #if SPIFFS_CACHE
 // Enables memory write caching for file descriptors in hydrogen
-#ifdef CONFIG_SPIFFS_CACHE_WR
-#define SPIFFS_CACHE_WR             (1)
-#else
+#ifndef  SPIFFS_CACHE_WR
+#ifndef CONFIG_SPIFFS_CACHE_WR
 #define SPIFFS_CACHE_WR             (0)
+#else
+#define SPIFFS_CACHE_WR             (1)
+#endif
 #endif
 
 // Enable/disable statistics on caching. Debug/test purpose only.
+#ifndef  SPIFFS_CACHE_STATS
 #ifdef CONFIG_SPIFFS_CACHE_STATS
 #define SPIFFS_CACHE_STATS          (1)
 #else
 #define SPIFFS_CACHE_STATS          (0)
 #endif
 #endif
+#endif
 
 // Always check header of each accessed page to ensure consistent state.
 // If enabled it will increase number of reads, will increase flash.
-#ifdef CONFIG_SPIFFS_PAGE_CHECK
-#define SPIFFS_PAGE_CHECK           (1)
-#else
+#ifndef SPIFFS_PAGE_CHECK
+#ifndef CONFIG_SPIFFS_PAGE_CHECK
 #define SPIFFS_PAGE_CHECK           (0)
+#else
+#define SPIFFS_PAGE_CHECK           (1)
+#endif
 #endif
 
 // Define maximum number of gc runs to perform to reach desired free pages.
@@ -113,10 +124,12 @@ typedef uint8_t u8_t;
 #endif
 
 // Enable/disable statistics on gc. Debug/test purpose only.
+#ifndef SPIFFS_GC_STATS
 #ifdef CONFIG_SPIFFS_GC_STATS
 #define SPIFFS_GC_STATS             (1)
 #else
 #define SPIFFS_GC_STATS             (0)
+#endif
 #endif
 
 // Garbage collecting examines all pages in a block which and sums up
@@ -162,7 +175,9 @@ typedef uint8_t u8_t;
 // Size of buffer allocated on stack used when copying data.
 // Lower value generates more read/writes. No meaning having it bigger
 // than logical page size.
+#ifndef SPIFFS_COPY_BUFFER_STACK
 #define SPIFFS_COPY_BUFFER_STACK        (256)
+#endif
 
 // Enable this to have an identifiable spiffs filesystem. This will look for
 // a magic in all sectors to determine if this is a valid spiffs system or
@@ -180,12 +195,14 @@ typedef uint8_t u8_t;
 // For example, a filesystem configured and formatted for 4 megabytes will not
 // be accepted for mounting with a configuration defining the filesystem as 2
 // megabytes.
-#ifdef CONFIG_SPIFFS_USE_MAGIC_LENGTH
-#define SPIFFS_USE_MAGIC_LENGTH         (1)
-#else
+#ifndef SPIFFS_USE_MAGIC_LENGTH
+#ifndef CONFIG_SPIFFS_USE_MAGIC_LENGTH
 #define SPIFFS_USE_MAGIC_LENGTH         (0)
+#else
+#define SPIFFS_USE_MAGIC_LENGTH         (1)
 #endif
 #endif
+#endif // SPIFFS_USE_MAGIC
 
 // SPIFFS_LOCK and SPIFFS_UNLOCK protects spiffs from reentrancy on api level
 // These should be defined on a multithreaded system
@@ -201,10 +218,14 @@ typedef uint8_t u8_t;
 #define SPIFFS_SINGLETON 0
 
 // Enable this if your target needs aligned data for index tables
+#ifndef SPIFFS_ALIGNED_OBJECT_INDEX_TABLES
 #define SPIFFS_ALIGNED_OBJECT_INDEX_TABLES      0
+#endif
 
 // Enable this if you want the HAL callbacks to be called with the spiffs struct
+#ifndef SPIFFS_HAL_CALLBACK_EXTRA
 #define SPIFFS_HAL_CALLBACK_EXTRA               1
+#endif
 
 // Enable this if you want to add an integer offset to all file handles
 // (spiffs_file). This is useful if running multiple instances of spiffs on
@@ -224,7 +245,9 @@ typedef uint8_t u8_t;
 // SPIFFS_USE_MAGIC is enabled, SPIFFS_ERR_RO_ABORTED_OPERATION will be
 // returned.
 // Might be useful for e.g. bootloaders and such.
+#ifndef SPIFFS_READ_ONLY
 #define SPIFFS_READ_ONLY                        0
+#endif
 
 // Enable this to add a temporal file cache using the fd buffer.
 // The effects of the cache is that SPIFFS_open will find the file faster in
@@ -244,14 +267,18 @@ typedef uint8_t u8_t;
 // fd is closed. If the file is opened again, the location of the file is found
 // directly. If all available descriptors become opened, all cache memory is
 // lost.
+#ifndef SPIFFS_TEMPORAL_FD_CACHE
 #define SPIFFS_TEMPORAL_FD_CACHE                1
+#endif
 
 // Temporal file cache hit score. Each time a file is opened, all cached files
 // will lose one point. If the opened file is found in cache, that entry will
 // gain SPIFFS_TEMPORAL_CACHE_HIT_SCORE points. One can experiment with this
 // value for the specific access patterns of the application. However, it must
 // be between 1 (no gain for hitting a cached entry often) and 255.
+#ifndef SPIFFS_TEMPORAL_CACHE_HIT_SCORE
 #define SPIFFS_TEMPORAL_CACHE_HIT_SCORE         4
+#endif
 
 // Enable to be able to map object indices to memory.
 // This allows for faster and more deterministic reading if cases of reading
@@ -265,16 +292,21 @@ typedef uint8_t u8_t;
 // collecting or when modifying the indices. The latter is invoked by when the
 // file is modified in some way. The index buffer is tied to the file
 // descriptor.
+#ifndef SPIFFS_IX_MAP
 #define SPIFFS_IX_MAP                           1
+#endif
 
 // Set SPIFFS_TEST_VISUALISATION to non-zero to enable SPIFFS_vis function
 // in the api. This function will visualize all filesystem using given printf
 // function.
-#ifdef CONFIG_SPIFFS_TEST_VISUALISATION
-#define SPIFFS_TEST_VISUALISATION               1
-#else
+#ifndef SPIFFS_TEST_VISUALISATION
+#ifndef CONFIG_SPIFFS_TEST_VISUALISATION
 #define SPIFFS_TEST_VISUALISATION               0
+#else
+#define SPIFFS_TEST_VISUALISATION               1
 #endif
+#endif
+
 #if SPIFFS_TEST_VISUALISATION
 #ifndef spiffs_printf
 #define spiffs_printf(...)                printf(__VA_ARGS__)

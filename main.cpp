@@ -168,6 +168,7 @@ static void spiffs_update_meta(spiffs *fs, spiffs_file fd, u8_t type)
 #endif
 }
 
+/*
 static time_t spiffs_get_mtime(const spiffs_stat* s)
 {
     time_t t = 0;
@@ -178,6 +179,7 @@ static time_t spiffs_get_mtime(const spiffs_stat* s)
 #endif
     return t;
 }
+
 
 static int get_spiffs_stat(const char * path, struct stat * st)
 {
@@ -201,6 +203,7 @@ static int get_spiffs_stat(const char * path, struct stat * st)
     st->st_ctime = 0;
     return res;
 }
+*/
 
 int addFile(char* name, const char* path) {
     FILE* src = fopen(path, "rb");
@@ -369,7 +372,7 @@ int addFiles(const char* dirname, const char* subPath) {
 void listFiles() {
     spiffs_DIR dir;
     spiffs_dirent ent;
-    struct stat sb = {0};
+    //struct stat sb = {0};
 
     SPIFFS_opendir(&s_fs, 0, &dir);
     spiffs_dirent* it;
@@ -378,8 +381,9 @@ void listFiles() {
         if (!it)
             break;
 
-        get_spiffs_stat((const char *)it->name, &sb);
-        std::cout << sb.st_mode << '\t' << it->size << '\t' << it->name << std::endl;
+        //get_spiffs_stat((const char *)it->name, &sb);
+        //std::cout << sb.st_mode << '\t' << it->size << '\t' << it->name << std::endl;
+        std::cout << it->size << '\t' << it->name << std::endl;
     }
     SPIFFS_closedir(&dir);
 }
@@ -562,7 +566,7 @@ int actionPack() {
 
     spiffsFormat();
     int result = addFiles(s_dirName.c_str(), "/");
-    listFiles();
+    //listFiles();
     spiffsUnmount();
 
     fwrite(&s_flashmem[0], 4, s_flashmem.size()/4, fdres);
