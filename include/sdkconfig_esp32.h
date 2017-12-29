@@ -1,6 +1,7 @@
 /*
  *
- * Dummy sdkconfig.h file.
+ * Automatically generated file; DO NOT EDIT.
+ * Espressif IoT Development Framework Configuration
  *
  */
 #define CONFIG_SPIFFS_USE_MAGIC_LENGTH 1
