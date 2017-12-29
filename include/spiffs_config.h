@@ -18,6 +18,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <sdkconfig.h>
 
 // Set generic spiffs debug output call.
 #ifndef SPIFFS_DBG
@@ -77,33 +78,54 @@ typedef uint8_t u8_t;
 
 // Enables/disable memory read caching of nucleus file system operations.
 // If enabled, memory area must be provided for cache in SPIFFS_mount.
-#ifndef  SPIFFS_CACHE
-#define SPIFFS_CACHE                    1
+#ifndef SPIFFS_CACHE
+#define SPIFFS_CACHE                (1)
 #endif
+
 #if SPIFFS_CACHE
 // Enables memory write caching for file descriptors in hydrogen
-#ifndef  SPIFFS_CACHE_WR
-#define SPIFFS_CACHE_WR                 1
+#ifndef SPIFFS_CACHE_WR
+#ifndef CONFIG_SPIFFS_CACHE_WR
+#define SPIFFS_CACHE_WR             (0)
+#else
+#define SPIFFS_CACHE_WR             (1)
+#endif
 #endif
 
 // Enable/disable statistics on caching. Debug/test purpose only.
-#ifndef  SPIFFS_CACHE_STATS
-#define SPIFFS_CACHE_STATS              0
+#ifndef SPIFFS_CACHE_STATS
+#ifdef CONFIG_SPIFFS_CACHE_STATS
+#define SPIFFS_CACHE_STATS          (1)
+#else
+#define SPIFFS_CACHE_STATS          (0)
+#endif
 #endif
 #endif
 
 // Always check header of each accessed page to ensure consistent state.
 // If enabled it will increase number of reads, will increase flash.
 #ifndef SPIFFS_PAGE_CHECK
-#define SPIFFS_PAGE_CHECK               1
+#ifndef CONFIG_SPIFFS_PAGE_CHECK
+#define SPIFFS_PAGE_CHECK           (0)
+#else
+#define SPIFFS_PAGE_CHECK           (1)
+#endif
 #endif
 
 // Define maximum number of gc runs to perform to reach desired free pages.
+#ifdef CONFIG_SPIFFS_GC_MAX_RUNS
+#define SPIFFS_GC_MAX_RUNS              CONFIG_SPIFFS_GC_MAX_RUNS
+#else
 #define SPIFFS_GC_MAX_RUNS              10
+#endif
 
 // Enable/disable statistics on gc. Debug/test purpose only.
 #ifndef SPIFFS_GC_STATS
-#define SPIFFS_GC_STATS                 0
+#ifdef CONFIG_SPIFFS_GC_STATS
+#define SPIFFS_GC_STATS             (1)
+#else
+#define SPIFFS_GC_STATS             (0)
+#endif
 #endif
 
 // Garbage collecting examines all pages in a block which and sums up
@@ -125,8 +147,11 @@ typedef uint8_t u8_t;
 // Object name maximum length. Note that this length include the
 // zero-termination character, meaning maximum string of characters
 // can at most be SPIFFS_OBJ_NAME_LEN - 1.
+#ifdef CONFIG_SPIFFS_OBJ_NAME_LEN
+#define SPIFFS_OBJ_NAME_LEN             (CONFIG_SPIFFS_OBJ_NAME_LEN)
+#else
 #define SPIFFS_OBJ_NAME_LEN             (32)
-
+#endif
 // Maximum length of the metadata associated with an object.
 // Setting to non-zero value enables metadata-related API but also
 // changes the on-disk format, so the change is not backward-compatible.
@@ -137,7 +162,11 @@ typedef uint8_t u8_t;
 // This is derived from following:
 // logical_page_size - (SPIFFS_OBJ_NAME_LEN + sizeof(spiffs_page_header) +
 // spiffs_object_ix_header fields + at least some LUT entries)
+#ifdef CONFIG_SPIFFS_META_LENGTH
+#define SPIFFS_OBJ_META_LEN             (CONFIG_SPIFFS_META_LENGTH)
+#else
 #define SPIFFS_OBJ_META_LEN             (0)
+#endif
 
 // Size of buffer allocated on stack used when copying data.
 // Lower value generates more read/writes. No meaning having it bigger
@@ -151,7 +180,11 @@ typedef uint8_t u8_t;
 // not on mount point. If not, SPIFFS_format must be called prior to mounting
 // again.
 #ifndef SPIFFS_USE_MAGIC
+#ifndef CONFIG_SPIFFS_USE_MAGIC
+#define SPIFFS_USE_MAGIC                (0)
+#else
 #define SPIFFS_USE_MAGIC                (1)
+#endif
 #endif
 
 #if SPIFFS_USE_MAGIC
@@ -161,9 +194,13 @@ typedef uint8_t u8_t;
 // be accepted for mounting with a configuration defining the filesystem as 2
 // megabytes.
 #ifndef SPIFFS_USE_MAGIC_LENGTH
+#ifndef CONFIG_SPIFFS_USE_MAGIC_LENGTH
+#define SPIFFS_USE_MAGIC_LENGTH         (0)
+#else
 #define SPIFFS_USE_MAGIC_LENGTH         (1)
 #endif
 #endif
+#endif // SPIFFS_USE_MAGIC
 
 // SPIFFS_LOCK and SPIFFS_UNLOCK protects spiffs from reentrancy on api level
 // These should be defined on a multithreaded system
@@ -185,7 +222,7 @@ typedef uint8_t u8_t;
 
 // Enable this if you want the HAL callbacks to be called with the spiffs struct
 #ifndef SPIFFS_HAL_CALLBACK_EXTRA
-#define SPIFFS_HAL_CALLBACK_EXTRA               0
+#define SPIFFS_HAL_CALLBACK_EXTRA               1
 #endif
 
 // Enable this if you want to add an integer offset to all file handles
@@ -194,9 +231,7 @@ typedef uint8_t u8_t;
 // belongs.
 // NB: This adds config field fh_ix_offset in the configuration struct when
 // mounting, which must be defined.
-#ifndef SPIFFS_FILEHDL_OFFSET
 #define SPIFFS_FILEHDL_OFFSET                   0
-#endif
 
 // Enable this to compile a read only version of spiffs.
 // This will reduce binary size of spiffs. All code comprising modification
@@ -261,10 +296,15 @@ typedef uint8_t u8_t;
 
 // Set SPIFFS_TEST_VISUALISATION to non-zero to enable SPIFFS_vis function
 // in the api. This function will visualize all filesystem using given printf
-// function..
+// function.
 #ifndef SPIFFS_TEST_VISUALISATION
-#define SPIFFS_TEST_VISUALISATION         1
+#ifndef CONFIG_SPIFFS_TEST_VISUALISATION
+#define SPIFFS_TEST_VISUALISATION               0
+#else
+#define SPIFFS_TEST_VISUALISATION               1
 #endif
+#endif
+
 #if SPIFFS_TEST_VISUALISATION
 #ifndef spiffs_printf
 #define spiffs_printf(...)                printf(__VA_ARGS__)

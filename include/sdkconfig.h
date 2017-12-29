@@ -1,0 +1,5 @@
+/*
+ *
+ * Dummy sdkconfig.h file.
+ *
+ */

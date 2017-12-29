@@ -9,6 +9,8 @@
 
 #include <iostream>
 #include "spiffs.h"
+#include "spiffs_nucleus.h"
+#include <time.h>
 #include <vector>
 #include <dirent.h>
 #include <sys/types.h>
@@ -20,6 +22,21 @@
 #include <cstdlib>
 #include "tclap/CmdLine.h"
 #include "tclap/UnlabeledValueArg.h"
+
+#if defined (CONFIG_SPIFFS_USE_MTIME) || defined (CONFIG_SPIFFS_USE_DIR)
+/**
+ * @brief SPIFFS metadata structure
+ */
+typedef struct {
+#ifdef CONFIG_SPIFFS_USE_MTIME
+    s32_t mtime;   /*!< file modification time */
+#endif
+#ifdef CONFIG_SPIFFS_USE_DIR
+    u8_t type;      /*!< file type */
+#endif
+} __attribute__((packed, aligned(1))) spiffs_meta_t;
+#endif
+
 
 static std::vector<uint8_t> s_flashmem;
 
@@ -49,6 +66,22 @@ static const char* ignored_file_names[] = {
     ".gitmodules"
 };
 
+#if SPIFFS_HAL_CALLBACK_EXTRA
+static s32_t api_spiffs_read(struct spiffs_t *fs, u32_t addr, u32_t size, u8_t *dst){
+    memcpy(dst, &s_flashmem[0] + addr, size);
+    return SPIFFS_OK;
+}
+
+static s32_t api_spiffs_write(struct spiffs_t *fs, u32_t addr, u32_t size, u8_t *src){
+    memcpy(&s_flashmem[0] + addr, src, size);
+    return SPIFFS_OK;
+}
+
+static s32_t api_spiffs_erase(struct spiffs_t *fs, u32_t addr, u32_t size){
+    memset(&s_flashmem[0] + addr, 0xff, size);
+    return SPIFFS_OK;
+}
+#else
 static s32_t api_spiffs_read(u32_t addr, u32_t size, u8_t *dst){
     memcpy(dst, &s_flashmem[0] + addr, size);
     return SPIFFS_OK;
@@ -63,7 +96,7 @@ static s32_t api_spiffs_erase(u32_t addr, u32_t size){
     memset(&s_flashmem[0] + addr, 0xff, size);
     return SPIFFS_OK;
 }
-
+#endif
 
 
 
@@ -85,8 +118,8 @@ int spiffsTryMount(){
 
     const int maxOpenFiles = 4;
     s_spiffsWorkBuf.resize(s_pageSize * 2);
-    s_spiffsFds.resize(32 * maxOpenFiles);
-    s_spiffsCache.resize((32 + s_pageSize) * maxOpenFiles);
+    s_spiffsFds.resize(sizeof(spiffs_fd) * maxOpenFiles);
+    s_spiffsCache.resize(sizeof(spiffs_cache) + maxOpenFiles * (sizeof(spiffs_cache_page) + cfg.log_page_size));
 
     return SPIFFS_mount(&s_fs, &cfg,
         &s_spiffsWorkBuf[0],
@@ -116,6 +149,62 @@ void spiffsUnmount(){
     SPIFFS_unmount(&s_fs);
 }
 
+static void spiffs_update_meta(spiffs *fs, spiffs_file fd, u8_t type)
+{
+#if defined (CONFIG_SPIFFS_USE_MTIME) || defined (CONFIG_SPIFFS_USE_DIR)
+    spiffs_meta_t meta;
+#ifdef CONFIG_SPIFFS_USE_MTIME
+    meta.mtime = time(NULL);
+#endif //CONFIG_SPIFFS_USE_MTIME
+
+#ifdef CONFIG_SPIFFS_USE_DIR
+    // Add file type (directory or regular file) to the last byte of metadata
+    meta.type = type;
+#endif
+    int ret = SPIFFS_fupdate_meta(fs, fd, (uint8_t *)&meta);
+    if (ret != SPIFFS_OK) {
+        std::cerr << "error: Failed to update metadata: " << ret << std::endl;
+    }
+#endif
+}
+
+/*
+static time_t spiffs_get_mtime(const spiffs_stat* s)
+{
+    time_t t = 0;
+#ifdef CONFIG_SPIFFS_USE_MTIME
+    spiffs_meta_t meta;
+    memcpy(&meta, s->meta, sizeof(meta));
+    t = meta.mtime;
+#endif
+    return t;
+}
+
+
+static int get_spiffs_stat(const char * path, struct stat * st)
+{
+    spiffs_stat s;
+    off_t res = SPIFFS_stat(&s_fs, path, &s);
+    if (res < 0) {
+        SPIFFS_clearerr(&s_fs);
+        return -1;
+    }
+
+    st->st_size = s.size;
+#ifdef CONFIG_SPIFFS_USE_DIR
+    spiffs_meta_t *meta = (spiffs_meta_t *)&s.meta;
+    if (meta->type == SPIFFS_TYPE_DIR) st->st_mode = S_IFDIR;
+    else st->st_mode = S_IFREG;
+#else
+    st->st_mode = (s.type == SPIFFS_TYPE_DIR)?S_IFDIR:S_IFREG;
+#endif
+    st->st_mtime = spiffs_get_mtime(&s);
+    st->st_atime = 0;
+    st->st_ctime = 0;
+    return res;
+}
+*/
+
 int addFile(char* name, const char* path) {
     FILE* src = fopen(path, "rb");
     if (!src) {
@@ -124,6 +213,7 @@ int addFile(char* name, const char* path) {
     }
 
     spiffs_file dst = SPIFFS_open(&s_fs, name, SPIFFS_CREAT | SPIFFS_TRUNC | SPIFFS_RDWR, 0);
+    spiffs_update_meta(&s_fs, dst, SPIFFS_TYPE_FILE);
 
     // read file size
     fseek(src, 0, SEEK_END);
@@ -213,6 +303,29 @@ int addFiles(const char* dirname, const char* subPath) {
             if (!S_ISREG(path_stat.st_mode)) {
                 // Check if path is a directory.
                 if (S_ISDIR(path_stat.st_mode)) {
+#ifdef CONFIG_SPIFFS_USE_DIR
+                    std::string dirpath = subPath;
+                    dirpath += ent->d_name;
+                    std::cout << dirpath << " [D]"  << std::endl;
+                    spiffs_file dst = SPIFFS_open(&s_fs, (char*)dirpath.c_str(), SPIFFS_CREAT | SPIFFS_WRONLY, 0);
+                    if (dst < 0) {
+                        std::cerr << "error adding directory (open)!" << std::endl;
+                        error = true;
+                        if (s_debugLevel > 0) {
+                            std::cout << std::endl;
+                        }
+                        break;
+                    }
+                    spiffs_update_meta(&s_fs, dst, SPIFFS_TYPE_DIR);
+                    if (SPIFFS_close(&s_fs, dst) < 0) {
+                        std::cerr << "error adding directory (close)!" << std::endl;
+                        error = true;
+                        if (s_debugLevel > 0) {
+                            std::cout << std::endl;
+                        }
+                        break;
+                    }
+#endif
                     // Prepare new sub path.
                     std::string newSubPath = subPath;
                     newSubPath += ent->d_name;
@@ -259,6 +372,7 @@ int addFiles(const char* dirname, const char* subPath) {
 void listFiles() {
     spiffs_DIR dir;
     spiffs_dirent ent;
+    //struct stat sb = {0};
 
     SPIFFS_opendir(&s_fs, 0, &dir);
     spiffs_dirent* it;
@@ -267,6 +381,8 @@ void listFiles() {
         if (!it)
             break;
 
+        //get_spiffs_stat((const char *)it->name, &sb);
+        //std::cout << sb.st_mode << '\t' << it->size << '\t' << it->name << std::endl;
         std::cout << it->size << '\t' << it->name << std::endl;
     }
     SPIFFS_closedir(&dir);
@@ -450,6 +566,7 @@ int actionPack() {
 
     spiffsFormat();
     int result = addFiles(s_dirName.c_str(), "/");
+    //listFiles();
     spiffsUnmount();
 
     fwrite(&s_flashmem[0], 4, s_flashmem.size()/4, fdres);
@@ -476,7 +593,7 @@ int actionUnpack(void) {
     }
 
     // read content into s_flashmem
-    fread(&s_flashmem[0], 4, s_flashmem.size()/4, fdsrc);
+    ret = fread(&s_flashmem[0], 4, s_flashmem.size()/4, fdsrc);
 
     // close fiel handle
     fclose(fdsrc);
@@ -505,7 +622,11 @@ int actionList() {
         return 1;
     }
 
-    fread(&s_flashmem[0], 4, s_flashmem.size()/4, fdsrc);
+    int ret = fread(&s_flashmem[0], 4, s_flashmem.size()/4, fdsrc);
+    if (ret < 0) {
+        std::cerr << "error: failed to read from image file" << std::endl;
+        return 1;
+    }
     fclose(fdsrc);
     spiffsMount();
     listFiles();
@@ -514,6 +635,7 @@ int actionList() {
 }
 
 int actionVisualize() {
+#if SPIFFS_TEST_VISUALISATION
     s_flashmem.resize(s_imageSize, 0xff);
 
     FILE* fdsrc = fopen(s_imageName.c_str(), "rb");
@@ -531,7 +653,7 @@ int actionVisualize() {
     SPIFFS_info(&s_fs, &total, &used);
     std::cout << "total: " << total <<  std::endl << "used: " << used << std::endl;
     spiffsUnmount();
-
+#endif
     return 0;
 }
 
