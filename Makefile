@@ -66,6 +66,10 @@ OBJ		:= main.o \
 
 INCLUDES := -Itclap -Iinclude -Ispiffs/src -I.
 
+FILES_TO_FORMAT := $(shell find . -not -path './spiffs/*' \( -name '*.c' -o -name '*.cpp' \))
+
+DIFF_FILES := $(addsuffix .diff,$(FILES_TO_FORMAT))
+
 # clang doesn't seem to handle -D "ARG=\"foo bar\"" correctly, so replace spaces with \x20:
 BUILD_CONFIG_STR := $(shell echo $(CPPFLAGS) | sed 's- -\\\\x20-')
 
@@ -85,8 +89,6 @@ override LDFLAGS := $(TARGET_LDFLAGS) $(LDFLAGS)
 DIST_NAME := mkspiffs-$(VERSION)$(BUILD_CONFIG_NAME)-$(TARGET_OS)
 DIST_DIR := $(DIST_NAME)
 DIST_ARCHIVE := $(DIST_NAME).$(ARCHIVE_EXTENSION)
-
-.PHONY: all clean dist
 
 all: $(TARGET)
 
@@ -108,7 +110,7 @@ $(DIST_DIR):
 	@mkdir -p $@
 
 clean:
-	@rm -f $(TARGET) $(OBJ)
+	@rm -f $(TARGET) $(OBJ) $(DIFF_FILES)
 
 SPIFFS_TEST_FS_CONFIG := -s 0x100000 -p 512 -b 0x2000
 
@@ -132,3 +134,19 @@ test: $(TARGET)
 	diff spiffs_t spiffs_u
 	rm -f out.{list0,list1,list2,list_u,spiffs_t}
 	rm -R spiffs_u spiffs_t
+
+format-check: $(DIFF_FILES)
+	@rm -f $(DIFF_FILES)
+
+$(DIFF_FILES): %.diff: %
+	@./format.sh < $< >$<.new
+	@diff $<.new $< >$@ || ( \
+		echo "File $^ not formatted correctly. Please use format.sh to re-format it." && \
+		echo "Here's the diff that caused an error:" && \
+		echo "" && \
+		cat $@ && \
+		rm $@ $<.new && \
+		exit 1 )
+	@rm -f $@ $<.new
+
+.PHONY: all clean dist format-check
