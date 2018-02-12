@@ -1,38 +1,57 @@
+# OS detection. Not used in CI builds
+ifndef TARGET_OS
 ifeq ($(OS),Windows_NT)
-	TARGET_OS := WINDOWS
-	DIST_SUFFIX := windows
-	ARCHIVE_CMD := 7z a
-	ARCHIVE_EXTENSION := zip
-	TARGET := mkspiffs.exe
-	TARGET_CFLAGS := -mno-ms-bitfields
-	TARGET_LDFLAGS := -Wl,-static -static-libgcc
-	CC=gcc
-	CXX=g++
+	TARGET_OS := win32
 else
 	UNAME_S := $(shell uname -s)
 	ifeq ($(UNAME_S),Linux)
-		TARGET_OS := LINUX
-		UNAME_P := $(shell uname -p)
-		ifeq ($(UNAME_P),x86_64)
-			DIST_SUFFIX ?= linux64
+		UNAME_M := $(shell uname -m)
+		ifeq ($(UNAME_M),x86_64)
+			TARGET_OS := linux64
 		endif
-		ifneq ($(filter %86,$(UNAME_P)),)
-			DIST_SUFFIX ?= linux32
+		ifeq ($(UNAME_M),i686)
+			TARGET_OS := linux32
+		endif
+		ifeq ($(UNAME_M),armv6l)
+			TARGET_OS := linux-armhf
 		endif
 	endif
 	ifeq ($(UNAME_S),Darwin)
-		TARGET_OS := OSX
-		DIST_SUFFIX := osx
-		CC=clang
-		CXX=clang++
-		TARGET_CFLAGS   = -mmacosx-version-min=10.7 -arch i386 -arch x86_64
-		TARGET_CXXFLAGS = -mmacosx-version-min=10.7 -arch i386 -arch x86_64 -stdlib=libc++
-		TARGET_LDFLAGS  = -arch i386 -arch x86_64 -stdlib=libc++
+		TARGET_OS := osx
 	endif
-	ARCHIVE_CMD := tar czf
-	ARCHIVE_EXTENSION := tar.gz
+	ifeq ($(UNAME_S),FreeBSD)
+		TARGET_OS := freebsd
+	endif
+endif
+endif # TARGET_OS
+
+# OS-specific settings and build flags
+ifeq ($(TARGET_OS),win32)
+	ARCHIVE ?= zip
+	TARGET := mkspiffs.exe
+	TARGET_CFLAGS = -mno-ms-bitfields
+	TARGET_LDFLAGS = -Wl,-static -static-libgcc -static-libstdc++
+else
+	ARCHIVE ?= tar
 	TARGET := mkspiffs
 endif
+
+ifeq ($(TARGET_OS),osx)
+	TARGET_CFLAGS   = -mmacosx-version-min=10.7 -arch i386 -arch x86_64
+	TARGET_CXXFLAGS = -mmacosx-version-min=10.7 -arch i386 -arch x86_64 -stdlib=libc++
+	TARGET_LDFLAGS  = -mmacosx-version-min=10.7 -arch i386 -arch x86_64 -stdlib=libc++
+endif
+
+# Packaging into archive (for 'dist' target)
+ifeq ($(ARCHIVE), zip)
+	ARCHIVE_CMD := zip -r
+	ARCHIVE_EXTENSION := zip
+endif
+ifeq ($(ARCHIVE), tar)
+	ARCHIVE_CMD := tar czf
+	ARCHIVE_EXTENSION := tar.gz
+endif
+
 
 VERSION ?= $(shell git describe --always)
 SPIFFS_VERSION := $(shell git -C spiffs describe --tags || echo "unknown")
@@ -47,12 +66,14 @@ OBJ		:= main.o \
 
 INCLUDES := -Itclap -Iinclude -Ispiffs/src -I.
 
+# clang doesn't seem to handle -D "ARG=\"foo bar\"" correctly, so replace spaces with \x20:
+BUILD_CONFIG_STR := $(shell echo $(CPPFLAGS) | sed 's- -\\\\x20-')
+
 override CPPFLAGS := \
 	$(INCLUDES) \
-	-D $(TARGET_OS) \
 	-D VERSION=\"$(VERSION)\" \
 	-D SPIFFS_VERSION=\"$(SPIFFS_VERSION)\" \
-	-D "BUILD_CONFIG=\"$(CPPFLAGS)\"" \
+	-D BUILD_CONFIG=\"$(BUILD_CONFIG_STR)\" \
 	-D BUILD_CONFIG_NAME=\"$(BUILD_CONFIG_NAME)\" \
 	-D __NO_INLINE__ \
 	$(CPPFLAGS)
@@ -61,7 +82,7 @@ override CFLAGS := -std=gnu99 -Os -Wall $(TARGET_CFLAGS) $(CFLAGS)
 override CXXFLAGS := -std=gnu++11 -Os -Wall $(TARGET_CXXFLAGS) $(CXXFLAGS)
 override LDFLAGS := $(TARGET_LDFLAGS) $(LDFLAGS)
 
-DIST_NAME := mkspiffs-$(VERSION)$(BUILD_CONFIG_NAME)-$(DIST_SUFFIX)
+DIST_NAME := mkspiffs-$(VERSION)$(BUILD_CONFIG_NAME)-$(TARGET_OS)
 DIST_DIR := $(DIST_NAME)
 DIST_ARCHIVE := $(DIST_NAME).$(ARCHIVE_EXTENSION)
 
@@ -69,7 +90,11 @@ DIST_ARCHIVE := $(DIST_NAME).$(ARCHIVE_EXTENSION)
 
 all: $(TARGET)
 
-dist: test $(DIST_ARCHIVE)
+dist: $(DIST_ARCHIVE)
+
+ifndef SKIP_TESTS
+dist: test
+endif
 
 $(DIST_ARCHIVE): $(TARGET) $(DIST_DIR)
 	cp $(TARGET) $(DIST_DIR)/

@@ -21,6 +21,10 @@
 #include "tclap/CmdLine.h"
 #include "tclap/UnlabeledValueArg.h"
 
+#ifdef _WIN32
+#include <direct.h>
+#endif
+
 static std::vector<uint8_t> s_flashmem;
 
 static std::string s_dirName;
