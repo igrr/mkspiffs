@@ -103,7 +103,11 @@ bool spiffsMount(){
   if(SPIFFS_mounted(&s_fs))
     return true;
   int res = spiffsTryMount();
-  return (res == SPIFFS_OK);
+  if (res != SPIFFS_OK) {
+    std::cerr << "SPIFFS mount failed with error: " << res << std::endl;
+    return false; 
+  }
+  return true;
 }
 
 bool spiffsFormat(){
@@ -443,6 +447,10 @@ int actionPack() {
         std::cerr << "error: can't read source directory" << std::endl;
         return 1;
     }
+
+    if (s_imageSize == 0) {
+        s_imageSize = 0x10000;
+    }
     
     s_flashmem.resize(s_imageSize, 0xff);
 
@@ -462,6 +470,14 @@ int actionPack() {
     return result;
 }
 
+size_t getFileSize(FILE* fp)
+{
+    fseek(fp, 0L, SEEK_END);
+    size_t size = (size_t) ftell(fp);
+    fseek(fp, 0L, SEEK_SET);
+    return size;
+}
+
 /**
  * @brief Unpack action.
  * @return 0 success, 1 error
@@ -470,7 +486,6 @@ int actionPack() {
  */
 int actionUnpack(void) {
     int ret = 0;
-    s_flashmem.resize(s_imageSize, 0xff);
 
     // open spiffs image
     FILE* fdsrc = fopen(s_imageName.c_str(), "rb");
@@ -479,14 +494,23 @@ int actionUnpack(void) {
         return 1;
     }
 
+    if (s_imageSize == 0) {
+        s_imageSize = getFileSize(fdsrc);
+    }
+
+    s_flashmem.resize(s_imageSize, 0xff);
+
     // read content into s_flashmem
     fread(&s_flashmem[0], 4, s_flashmem.size()/4, fdsrc);
 
-    // close fiel handle
+    // close file handle
     fclose(fdsrc);
 
     // mount file system
-    spiffsMount();
+    if (!spiffsMount()) {
+        std::cerr << "error: failed to mount image" << std::endl;
+        return 1;
+    }
 
     // unpack files
     if (! unpackFiles(s_dirName)) {
@@ -501,35 +525,53 @@ int actionUnpack(void) {
 
 
 int actionList() {
-    s_flashmem.resize(s_imageSize, 0xff);
-
     FILE* fdsrc = fopen(s_imageName.c_str(), "rb");
     if (!fdsrc) {
         std::cerr << "error: failed to open image file" << std::endl;
         return 1;
     }
 
+    if (s_imageSize == 0) {
+        s_imageSize = getFileSize(fdsrc);
+    }
+
+    s_flashmem.resize(s_imageSize, 0xff);
+
     fread(&s_flashmem[0], 4, s_flashmem.size()/4, fdsrc);
     fclose(fdsrc);
-    spiffsMount();
+
+    if (!spiffsMount()) {
+        std::cerr << "error: failed to mount image" << std::endl;
+        return 1;
+    }
+
     listFiles();
     spiffsUnmount();
     return 0;
 }
 
 int actionVisualize() {
-    s_flashmem.resize(s_imageSize, 0xff);
-
     FILE* fdsrc = fopen(s_imageName.c_str(), "rb");
     if (!fdsrc) {
         std::cerr << "error: failed to open image file" << std::endl;
         return 1;
     }
 
+    if (s_imageSize == 0) {
+        s_imageSize = getFileSize(fdsrc);
+    }
+
+    s_flashmem.resize(s_imageSize, 0xff);
+
+
     fread(&s_flashmem[0], 4, s_flashmem.size()/4, fdsrc);
     fclose(fdsrc);
 
-    spiffsMount();
+    if (!spiffsMount()) {
+        std::cerr << "error: failed to mount image" << std::endl;
+        return 1;
+    }
+
     SPIFFS_vis(&s_fs);
     uint32_t total, used;
     SPIFFS_info(&s_fs, &total, &used);
@@ -577,7 +619,7 @@ void processArgs(int argc, const char** argv) {
     TCLAP::SwitchArg listArg( "l", "list", "list files in spiffs image", false);
     TCLAP::SwitchArg visualizeArg( "i", "visualize", "visualize spiffs image", false);
     TCLAP::UnlabeledValueArg<std::string> outNameArg( "image_file", "spiffs image file", true, "", "image_file"  );
-    TCLAP::ValueArg<int> imageSizeArg( "s", "size", "fs image size, in bytes", false, 0x10000, "number" );
+    TCLAP::ValueArg<int> imageSizeArg( "s", "size", "fs image size, in bytes", false, 0, "number" );
     TCLAP::ValueArg<int> pageSizeArg( "p", "page", "fs page size, in bytes", false, 256, "number" );
     TCLAP::ValueArg<int> blockSizeArg( "b", "block", "fs block size, in bytes", false, 4096, "number" );
     TCLAP::SwitchArg addAllFilesArg( "a", "all-files", "when creating an image, include files which are normally ignored; currently only applies to '.DS_Store' files and '.git' directories", false);

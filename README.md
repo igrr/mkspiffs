@@ -115,5 +115,4 @@ MIT
 
 - [ ] Add more debug output and print SPIFFS debug output
 - [ ] Error handling
-- [ ] Determine the image size automatically when opening a file
 - [ ] Code cleanup
