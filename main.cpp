@@ -535,8 +535,39 @@ int actionVisualize() {
     return 0;
 }
 
+#define PRINT_INT_MACRO(def_name) \
+    std::cout << "  " # def_name ": " << def_name << std::endl;
+
+class CustomOutput : public TCLAP::StdOutput
+{
+    public:
+        virtual void version(TCLAP::CmdLineInterface& c)
+        {
+            std::cout << "mkspiffs ver. " VERSION << std::endl;
+            const char* configName = BUILD_CONFIG_NAME;
+            if (configName[0] == '-') configName += 1;
+            std::cout << "Build configuration name: " << configName << std::endl;
+            std::cout << "SPIFFS ver. " SPIFFS_VERSION << std::endl;
+            const char* buildConfig = BUILD_CONFIG;
+            std::cout << "Extra build flags: " << (strlen(buildConfig) ? buildConfig : "(none)") << std::endl;
+            std::cout << "SPIFFS configuration:" << std::endl;
+            PRINT_INT_MACRO(SPIFFS_OBJ_NAME_LEN);
+            PRINT_INT_MACRO(SPIFFS_OBJ_META_LEN);
+            PRINT_INT_MACRO(SPIFFS_USE_MAGIC);
+            #if SPIFFS_USE_MAGIC == 1
+                PRINT_INT_MACRO(SPIFFS_USE_MAGIC_LENGTH);
+            #endif
+            PRINT_INT_MACRO(SPIFFS_ALIGNED_OBJECT_INDEX_TABLES);
+        }
+};
+
+#undef PRINT_INT_MACRO
+
 void processArgs(int argc, const char** argv) {
     TCLAP::CmdLine cmd("", ' ', VERSION);
+    CustomOutput output;
+    cmd.setOutput(&output);
+
     TCLAP::ValueArg<std::string> packArg( "c", "create", "create spiffs image from a directory", true, "", "pack_dir");
     TCLAP::ValueArg<std::string> unpackArg( "u", "unpack", "unpack spiffs image to a directory", true, "", "dest_dir");
     TCLAP::SwitchArg listArg( "l", "list", "list files in spiffs image", false);

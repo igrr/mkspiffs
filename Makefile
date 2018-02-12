@@ -1,5 +1,3 @@
-BUILD_CONFIG_NAME ?= 
-
 ifeq ($(OS),Windows_NT)
 	TARGET_OS := WINDOWS
 	DIST_SUFFIX := windows
@@ -37,6 +35,8 @@ else
 endif
 
 VERSION ?= $(shell git describe --always)
+SPIFFS_VERSION := $(shell git -C spiffs describe --tags || echo "unknown")
+BUILD_CONFIG_NAME ?= -generic
 
 OBJ		:= main.o \
 		   spiffs/src/spiffs_cache.o \
@@ -47,10 +47,19 @@ OBJ		:= main.o \
 
 INCLUDES := -Itclap -Iinclude -Ispiffs/src -I.
 
+override CPPFLAGS := \
+	$(INCLUDES) \
+	-D $(TARGET_OS) \
+	-D VERSION=\"$(VERSION)\" \
+	-D SPIFFS_VERSION=\"$(SPIFFS_VERSION)\" \
+	-D "BUILD_CONFIG=\"$(CPPFLAGS)\"" \
+	-D BUILD_CONFIG_NAME=\"$(BUILD_CONFIG_NAME)\" \
+	-D __NO_INLINE__ \
+	$(CPPFLAGS)
+
 override CFLAGS := -std=gnu99 -Os -Wall $(TARGET_CFLAGS) $(CFLAGS)
 override CXXFLAGS := -std=gnu++11 -Os -Wall $(TARGET_CXXFLAGS) $(CXXFLAGS)
 override LDFLAGS := $(TARGET_LDFLAGS) $(LDFLAGS)
-override CPPFLAGS := $(INCLUDES) -D$(TARGET_OS) -DVERSION=\"$(VERSION)\" -D__NO_INLINE__ $(CPPFLAGS)
 
 DIST_NAME := mkspiffs-$(VERSION)$(BUILD_CONFIG_NAME)-$(DIST_SUFFIX)
 DIST_DIR := $(DIST_NAME)

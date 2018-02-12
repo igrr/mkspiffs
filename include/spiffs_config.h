@@ -125,7 +125,9 @@ typedef uint8_t u8_t;
 // Object name maximum length. Note that this length include the
 // zero-termination character, meaning maximum string of characters
 // can at most be SPIFFS_OBJ_NAME_LEN - 1.
+#ifndef SPIFFS_OBJ_NAME_LEN
 #define SPIFFS_OBJ_NAME_LEN             (32)
+#endif
 
 // Maximum length of the metadata associated with an object.
 // Setting to non-zero value enables metadata-related API but also
@@ -137,7 +139,9 @@ typedef uint8_t u8_t;
 // This is derived from following:
 // logical_page_size - (SPIFFS_OBJ_NAME_LEN + sizeof(spiffs_page_header) +
 // spiffs_object_ix_header fields + at least some LUT entries)
+#ifndef SPIFFS_OBJ_META_LEN
 #define SPIFFS_OBJ_META_LEN             (0)
+#endif
 
 // Size of buffer allocated on stack used when copying data.
 // Lower value generates more read/writes. No meaning having it bigger
