@@ -103,14 +103,16 @@ int spiffsTryMount()
                         NULL);
 }
 
-bool spiffsMount()
+bool spiffsMount(bool printError = true)
 {
     if (SPIFFS_mounted(&s_fs)) {
         return true;
     }
     int res = spiffsTryMount();
     if (res != SPIFFS_OK) {
-        std::cerr << "SPIFFS mount failed with error: " << res << std::endl;
+        if (printError) {
+            std::cerr << "SPIFFS mount failed with error: " << res << std::endl;
+        }
         return false;
     }
     return true;
@@ -118,7 +120,7 @@ bool spiffsMount()
 
 bool spiffsFormat()
 {
-    spiffsMount();
+    spiffsMount(false);
     SPIFFS_unmount(&s_fs);
     int formated = SPIFFS_format(&s_fs);
     if (formated != SPIFFS_OK) {
