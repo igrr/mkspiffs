@@ -54,6 +54,10 @@ Where:
 ```
 ## Build
 
+
+ [![Build status](http://img.shields.io/travis/igrr/mkspiffs.svg)](https://travis-ci.org/igrr/mkspiffs)
+
+
 You need gcc (≥4.8) or clang(≥600.0.57), and make. On Windows, use MinGW.
 
 Run:
@@ -98,13 +102,6 @@ SPIFFS configuration:
   SPIFFS_USE_MAGIC_LENGTH: 1
   SPIFFS_ALIGNED_OBJECT_INDEX_TABLES: 0
 ```
-
-
-### Build status
-
-Linux | Windows
-------|-------
- [![Linux build status](http://img.shields.io/travis/igrr/mkspiffs.svg)](https://travis-ci.org/igrr/mkspiffs) | [![Windows build status](http://img.shields.io/appveyor/ci/igrr/mkspiffs.svg)](https://ci.appveyor.com/project/igrr/mkspiffs)
 
 
 ## License
