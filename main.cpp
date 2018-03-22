@@ -71,7 +71,8 @@ static s32_t api_spiffs_erase(u32_t addr, u32_t size)
     return SPIFFS_OK;
 }
 
-
+static int checkArgs();
+static size_t getFileSize(FILE* fp);
 
 
 //implementation
@@ -147,9 +148,7 @@ int addFile(char* name, const char* path)
     spiffs_file dst = SPIFFS_open(&s_fs, name, SPIFFS_CREAT | SPIFFS_TRUNC | SPIFFS_RDWR, 0);
 
     // read file size
-    fseek(src, 0, SEEK_END);
-    size_t size = ftell(src);
-    fseek(src, 0, SEEK_SET);
+    size_t size = getFileSize(src);
 
     if (s_debugLevel > 0) {
         std::cout << "file size: " << size << std::endl;
@@ -468,6 +467,14 @@ int actionPack()
 
     if (s_imageSize == 0) {
         s_imageSize = 0x10000;
+        if (s_debugLevel > 0) {
+            std::cout << "image size not specifed, using default: " << s_imageSize << std::endl;
+        }
+    }
+
+    int err = checkArgs();
+    if (err != 0) {
+        return err;
     }
 
     s_flashmem.resize(s_imageSize, 0xff);
@@ -488,7 +495,7 @@ int actionPack()
     return result;
 }
 
-size_t getFileSize(FILE* fp)
+static size_t getFileSize(FILE* fp)
 {
     fseek(fp, 0L, SEEK_END);
     size_t size = (size_t) ftell(fp);
@@ -515,6 +522,11 @@ int actionUnpack(void)
 
     if (s_imageSize == 0) {
         s_imageSize = getFileSize(fdsrc);
+    }
+
+    int err = checkArgs();
+    if (err != 0) {
+        return err;
     }
 
     s_flashmem.resize(s_imageSize, 0xff);
@@ -555,6 +567,11 @@ int actionList()
         s_imageSize = getFileSize(fdsrc);
     }
 
+    int err = checkArgs();
+    if (err != 0) {
+        return err;
+    }
+
     s_flashmem.resize(s_imageSize, 0xff);
 
     fread(&s_flashmem[0], 4, s_flashmem.size() / 4, fdsrc);
@@ -580,6 +597,11 @@ int actionVisualize()
 
     if (s_imageSize == 0) {
         s_imageSize = getFileSize(fdsrc);
+    }
+
+    int err = checkArgs();
+    if (err != 0) {
+        return err;
     }
 
     s_flashmem.resize(s_imageSize, 0xff);
@@ -660,7 +682,7 @@ void processArgs(int argc, const char** argv)
     cmd.parse( argc, argv );
 
     if (debugArg.getValue() > 0) {
-        std::cout << "Debug output enabled" << std::endl;
+        std::cerr << "Debug output enabled" << std::endl;
         s_debugLevel = debugArg.getValue();
     }
 
@@ -683,13 +705,45 @@ void processArgs(int argc, const char** argv)
     s_addAllFiles = addAllFilesArg.isSet();
 }
 
+static int checkArgs()
+{
+    // Argument checks don't use TCLAP's Constraint interface because
+    // a) we need to check one argument against another, while Constraints only check
+    // each argument individually, and b) image size might only be known when image
+    // file is opened.
+
+    if (s_imageSize < 0 || s_pageSize < 0 || s_blockSize < 0) {
+        std::cerr << "error: Image, block, page sizes should not be negative" << std::endl;
+        return 1;
+    }
+
+    if (s_imageSize % s_blockSize != 0) {
+        std::cerr << "error: Image size should be a multiple of block size" << std::endl;
+        return 1;
+    }
+
+    if (s_blockSize % s_pageSize != 0) {
+        std::cerr << "error: Block size should be a multiple of page size" << std::endl;
+        return 1;
+    }
+
+    const int physicalFlashEraseBlockSize = 4096;
+    if (s_blockSize % physicalFlashEraseBlockSize != 0) {
+        std::cerr << "error: Block size should be multiple of flash erase block size (" <<
+                     physicalFlashEraseBlockSize << ")" << std::endl;
+        return 1;
+    }
+
+    return 0;
+}
+
 int main(int argc, const char * argv[])
 {
 
     try {
         processArgs(argc, argv);
     } catch (...) {
-        std::cerr << "Invalid arguments" << std::endl;
+        std::cerr << "error: Invalid arguments" << std::endl;
         return 1;
     }
 
