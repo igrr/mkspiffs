@@ -127,8 +127,9 @@ test: $(TARGET)
 	./mkspiffs -c spiffs_t $(SPIFFS_TEST_FS_CONFIG) out.spiffs_t | sort | sed s/^\\/// > out.list1
 	./mkspiffs -u spiffs_u $(SPIFFS_TEST_FS_CONFIG) out.spiffs_t | sort | sed s/^\\/// > out.list_u
 	./mkspiffs -l $(SPIFFS_TEST_FS_CONFIG) out.spiffs_t | cut -f 2 | sort | sed s/^\\/// > out.list2
-	diff --strip-trailing-cr out.list0 out.list1
-	diff --strip-trailing-cr out.list0 out.list2
+	awk 'BEGIN{RS="\1";ORS="";getline;gsub("\r","");print>ARGV[1]}' out.list0 out.list1 out.list2
+	diff out.list0 out.list1
+	diff out.list0 out.list2
 	rm -rf spiffs_t/.git
 	rm -f spiffs_t/.DS_Store
 	diff spiffs_t spiffs_u
