@@ -18,6 +18,42 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <sdkconfig.h>
+
+// Rename defines from menuconfig if present from sdkconfig.h
+#ifdef CONFIG_SPIFFS_USE_MAGIC_LENGTH
+#define SPIFFS_USE_MAGIC_LENGTH CONFIG_SPIFFS_USE_MAGIC_LENGTH
+#endif
+#ifdef CONFIG_SPIFFS_CACHE_WR
+#define SPIFFS_CACHE_WR CONFIG_SPIFFS_CACHE_WR
+#endif
+#ifdef CONFIG_SPIFFS_CACHE
+#define SPIFFS_CACHE CONFIG_SPIFFS_CACHE
+#endif
+#ifdef CONFIG_SPIFFS_META_LENGTH
+#define SPIFFS_META_LENGTH CONFIG_SPIFFS_META_LENGTH
+#endif
+#ifdef CONFIG_SPIFFS_USE_MAGIC
+#define SPIFFS_USE_MAGIC CONFIG_SPIFFS_USE_MAGIC
+#endif
+#ifdef CONFIG_SPIFFS_PAGE_CHECK
+#define SPIFFS_PAGE_CHECK CONFIG_SPIFFS_PAGE_CHECK
+#endif
+#ifdef CONFIG_SPIFFS_USE_MTIME
+#define SPIFFS_USE_MTIME CONFIG_SPIFFS_USE_MTIME
+#endif
+#ifdef CONFIG_SPIFFS_GC_MAX_RUNS
+#define SPIFFS_GC_MAX_RUNS CONFIG_SPIFFS_GC_MAX_RUNS
+#endif
+#ifdef CONFIG_SPIFFS_MAX_PARTITIONS
+#define SPIFFS_MAX_PARTITIONS CONFIG_SPIFFS_MAX_PARTITIONS
+#endif
+#ifdef CONFIG_SPIFFS_OBJ_NAME_LEN
+#define SPIFFS_OBJ_NAME_LEN CONFIG_SPIFFS_OBJ_NAME_LEN
+#endif
+#ifdef CONFIG_SPIFFS_PAGE_SIZE
+#define SPIFFS_PAGE_SIZE CONFIG_SPIFFS_PAGE_SIZE
+#endif
 
 // Set generic spiffs debug output call.
 #ifndef SPIFFS_DBG
@@ -99,7 +135,9 @@ typedef uint8_t u8_t;
 #endif
 
 // Define maximum number of gc runs to perform to reach desired free pages.
+#ifndef SPIFFS_GC_MAX_RUNS
 #define SPIFFS_GC_MAX_RUNS              10
+#endif
 
 // Enable/disable statistics on gc. Debug/test purpose only.
 #ifndef SPIFFS_GC_STATS
