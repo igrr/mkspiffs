@@ -71,7 +71,7 @@ FILES_TO_FORMAT := $(shell find . -not -path './spiffs/*' \( -name '*.c' -o -nam
 DIFF_FILES := $(addsuffix .diff,$(FILES_TO_FORMAT))
 
 # clang doesn't seem to handle -D "ARG=\"foo bar\"" correctly, so replace spaces with \x20:
-BUILD_CONFIG_STR := $(shell echo $(CPPFLAGS) | sed 's- -\\\\x20-')
+BUILD_CONFIG_STR := $(shell echo $(CPPFLAGS) | sed 's- -\\\\x20-g')
 
 override CPPFLAGS := \
 	$(INCLUDES) \
