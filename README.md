@@ -62,6 +62,7 @@ You need gcc (≥4.8) or clang(≥600.0.57), and make. On Windows, use MinGW.
 
 Run:
 ```bash
+$ git submodule update --init
 $ make dist
 ```
 
