@@ -25,6 +25,8 @@
 #include <direct.h>
 #endif
 
+extern "C" int fnmatch(char *pattern, char *string, int flags);
+
 static std::vector<uint8_t> s_flashmem;
 
 static std::string s_dirName;
@@ -46,7 +48,7 @@ static int s_debugLevel = 0;
 static bool s_addAllFiles;
 
 // Unless -a flag is given, these files/directories will not be included into the image
-static const char* ignored_file_names[] = {
+static std::vector<std::string> s_fileExclusions {
     ".DS_Store",
     ".git",
     ".gitignore",
@@ -213,9 +215,8 @@ int addFiles(const char* dirname, const char* subPath)
 
             if (!s_addAllFiles) {
                 bool skip = false;
-                size_t ignored_file_names_count = sizeof(ignored_file_names) / sizeof(ignored_file_names[0]);
-                for (size_t i = 0; i < ignored_file_names_count; ++i) {
-                    if (strcmp(ent->d_name, ignored_file_names[i]) == 0) {
+                for (const std::string& fileExclusion : s_fileExclusions) {
+                    if (fnmatch(const_cast<char*>(fileExclusion.c_str()), ent->d_name, 0) == 0) {
                         std::cerr << "skipping " << ent->d_name << std::endl;
                         skip = true;
                         break;
@@ -669,12 +670,14 @@ void processArgs(int argc, const char** argv)
     TCLAP::ValueArg<int> pageSizeArg( "p", "page", "fs page size, in bytes", false, 256, "number" );
     TCLAP::ValueArg<int> blockSizeArg( "b", "block", "fs block size, in bytes", false, 4096, "number" );
     TCLAP::SwitchArg addAllFilesArg( "a", "all-files", "when creating an image, include files which are normally ignored; currently only applies to '.DS_Store' files and '.git' directories", false);
+    TCLAP::MultiArg<std::string> exclusionArgs( "x", "exclude-files", "when creating an image, exclude these files (patterns accepted).", false, "file_list");
     TCLAP::ValueArg<int> debugArg( "d", "debug", "Debug level. 0 means no debug output.", false, 0, "0-5" );
 
     cmd.add( imageSizeArg );
     cmd.add( pageSizeArg );
     cmd.add( blockSizeArg );
     cmd.add( addAllFilesArg );
+    cmd.add( exclusionArgs );
     cmd.add( debugArg );
     std::vector<TCLAP::Arg*> args = {&packArg, &unpackArg, &listArg, &visualizeArg};
     cmd.xorAdd( args );
@@ -703,6 +706,9 @@ void processArgs(int argc, const char** argv)
     s_pageSize  = pageSizeArg.getValue();
     s_blockSize = blockSizeArg.getValue();
     s_addAllFiles = addAllFilesArg.isSet();
+
+    auto& newExclusions = exclusionArgs.getValue();
+    s_fileExclusions.insert(end(s_fileExclusions), begin(newExclusions), end(newExclusions));
 }
 
 static int checkArgs()

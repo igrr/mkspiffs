@@ -30,7 +30,8 @@ ifeq ($(TARGET_OS),win32)
 	ARCHIVE ?= zip
 	TARGET := mkspiffs.exe
 	TARGET_CFLAGS = -mno-ms-bitfields
-	TARGET_LDFLAGS = -Wl,-static -static-libgcc -static-libstdc++
+	MSYS_LIB_PATH = c:/mingw/msys/1.0/lib
+	TARGET_LDFLAGS = -Wl,-static -static-libgcc -static-libstdc++ $(MSYS_LIB_PATH)/libiberty.a
 else
 	ARCHIVE ?= tar
 	TARGET := mkspiffs
@@ -116,24 +117,36 @@ SPIFFS_TEST_FS_CONFIG := -s 0x100000 -p 512 -b 0x2000
 
 test: $(TARGET)
 	mkdir -p spiffs_t
-	cp spiffs/src/*.h spiffs_t/
 	cp spiffs/src/*.c spiffs_t/
 	rm -rf spiffs_t/.git
 	rm -f spiffs_t/.DS_Store
+	echo Producing output for *.h exclusion 
+	ls -1 spiffs_t > out.list_noh
+	cp spiffs/src/*.h spiffs_t/
+	echo Producing complete output
 	ls -1 spiffs_t > out.list0
+	echo Creating auto-excluded content
 	touch spiffs_t/.DS_Store
 	mkdir -p spiffs_t/.git
 	touch spiffs_t/.git/foo
-	./mkspiffs -c spiffs_t $(SPIFFS_TEST_FS_CONFIG) out.spiffs_t | sort | sed s/^\\/// > out.list1
-	./mkspiffs -u spiffs_u $(SPIFFS_TEST_FS_CONFIG) out.spiffs_t | sort | sed s/^\\/// > out.list_u
-	./mkspiffs -l $(SPIFFS_TEST_FS_CONFIG) out.spiffs_t | cut -f 2 | sort | sed s/^\\/// > out.list2
-	awk 'BEGIN{RS="\1";ORS="";getline;gsub("\r","");print>ARGV[1]}' out.list0 out.list1 out.list2
+	echo Generating images
+	./mkspiffs -c spiffs_t $(SPIFFS_TEST_FS_CONFIG) out.spiffs_t | sort | sed 's/^\\///' > out.list1
+	./mkspiffs -u spiffs_u $(SPIFFS_TEST_FS_CONFIG) out.spiffs_t | sort | sed 's/^\\///' > out.list_u
+	./mkspiffs -l $(SPIFFS_TEST_FS_CONFIG) out.spiffs_t | cut -f 2 | sort | sed 's/^\\///' > out.list2
+	#awk 'BEGIN{RS="\1";ORS="";getline;gsub("\r","");print>ARGV[1]}' out.list0 out.list1 out.list2
+	echo Packed output list should match complete list
 	diff out.list0 out.list1
+	echo Unpacked output list should match original list
 	diff out.list0 out.list2
+	echo Original content should match unpacked content
 	rm -rf spiffs_t/.git
 	rm -f spiffs_t/.DS_Store
 	diff spiffs_t spiffs_u
-	rm -f out.{list0,list1,list2,list_u,spiffs_t}
+	echo Generating image with exclusions
+	./mkspiffs -c spiffs_t $(SPIFFS_TEST_FS_CONFIG) -x *.h out.spiffs_t | sort | sed 's/^\\///' > out.list_x
+	echo Packed filtered list should match unpacked filtered list
+	diff out.list_noh out.list_x
+	rm -f out.{list0,list1,list2,list_u,list_noh,list_x,spiffs_t}
 	rm -R spiffs_u spiffs_t
 
 format-check: $(DIFF_FILES)
