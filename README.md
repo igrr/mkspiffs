@@ -5,9 +5,9 @@ Tool to build and unpack [SPIFFS](https://github.com/pellepl/spiffs) images.
 ## Usage
 
 ```
-   mkspiffs.exe  {-c <pack_dir>|-u <dest_dir>|-l|-i} [-d <0-5>] [-x
-                 <file_list>] ...  [-a] [-b <number>] [-p <number>] [-s
-                 <number>] [--] [--version] [-h] <image_file>
+   mkspiffs  {-c <pack_dir>|-u <dest_dir>|-l|-i} [-d <0-5>] 
+             [-x <file_list>] ...  [-a] [-b <number>] [-p <number>] 
+             [-s <number>] [--] [--version] [-h] <image_file>
 
 
 Where:
@@ -55,7 +55,6 @@ Where:
 
    <image_file>
      (required)  spiffs image file
-
 
 ```
 ## Build
