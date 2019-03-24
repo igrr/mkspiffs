@@ -5,13 +5,12 @@ Tool to build and unpack [SPIFFS](https://github.com/pellepl/spiffs) images.
 ## Usage
 
 ```
+   mkspiffs.exe  {-c <pack_dir>|-u <dest_dir>|-l|-i} [-d <0-5>] [-x
+                 <file_list>] ...  [-a] [-b <number>] [-p <number>] [-s
+                 <number>] [--] [--version] [-h] <image_file>
 
-   mkspiffs  {-c <pack_dir>|-u <dest_dir>|-l|-i} [-d <0-5>] [-b <number>]
-             [-p <number>] [-s <number>] [--] [--version] [-h]
-             <image_file>
 
-
-Where: 
+Where:
 
    -c <pack_dir>,  --create <pack_dir>
      (OR required)  create spiffs image from a directory
@@ -28,6 +27,13 @@ Where:
 
    -d <0-5>,  --debug <0-5>
      Debug level. 0 means no debug output.
+
+   -x <file_list>,  --exclude-files <file_list>  (accepted multiple times)
+     when creating an image, exclude these files (patterns accepted).
+
+   -a,  --all-files
+     when creating an image, include files which are normally ignored;
+     currently only applies to '.DS_Store' files and '.git' directories
 
    -b <number>,  --block <number>
      fs block size, in bytes
