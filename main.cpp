@@ -13,6 +13,7 @@
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <utime.h>
 #include <unistd.h>
 #include <cstring>
 #include <string>
@@ -23,6 +24,12 @@
 
 #ifdef _WIN32
 #include <direct.h>
+#endif
+
+#if CONFIG_SPIFFS_USE_MTIME
+#if SPIFFS_OBJ_META_LEN != 4
+#error You must set both CONFIG_SPIFFS_USE_MTIME=1 and CONFIG_SPIFFS_META_LENGTH=4 for ESP IDF MTIME compatibility.
+#endif
 #endif
 
 static std::vector<uint8_t> s_flashmem;
@@ -153,6 +160,13 @@ int addFile(char* name, const char* path)
     if (s_debugLevel > 0) {
         std::cout << "file size: " << size << std::endl;
     }
+
+    // read and update file modification time
+    #if CONFIG_SPIFFS_USE_MTIME
+    struct stat sbuff;
+    stat(path, &sbuff);
+    SPIFFS_fupdate_meta(&s_fs, dst, &sbuff.st_mtime);
+    #endif
 
     size_t left = size;
     uint8_t data_byte;
@@ -369,6 +383,15 @@ bool unpackFile(spiffs_dirent *spiffsFile, const char *destPath)
     // Close file.
     fclose(dst);
 
+    // Update file modification time.
+    #if CONFIG_SPIFFS_USE_MTIME
+    spiffs_stat sstat;
+    SPIFFS_stat(&s_fs, (const char*)spiffsFile->name, &sstat);
+    struct utimbuf times;
+    memcpy(&times.actime, sstat.meta, 4);
+    memcpy(&times.modtime, sstat.meta, 4);
+    utime(destPath, &times);
+    #endif
 
     return true;
 }
