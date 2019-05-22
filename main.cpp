@@ -165,7 +165,10 @@ int addFile(char* name, const char* path)
     #if CONFIG_SPIFFS_USE_MTIME
     struct stat sbuff;
     stat(path, &sbuff);
-    SPIFFS_fupdate_meta(&s_fs, dst, &sbuff.st_mtime);
+    uint8_t meta[4]; // mtime is stored in the meta character array in little-endian order
+    meta[0] = sbuff.st_mtime & 0xFF; meta[1] = (sbuff.st_mtime>>8) & 0xFF;
+    meta[2] = (sbuff.st_mtime>>16) & 0xFF; meta[3] = (sbuff.st_mtime>>24) & 0xFF;
+    SPIFFS_fupdate_meta(&s_fs, dst, meta);
     #endif
 
     size_t left = size;
@@ -387,9 +390,9 @@ bool unpackFile(spiffs_dirent *spiffsFile, const char *destPath)
     #if CONFIG_SPIFFS_USE_MTIME
     spiffs_stat sstat;
     SPIFFS_stat(&s_fs, (const char*)spiffsFile->name, &sstat);
+    uint32_t meta = (sstat.meta[0]<<0) | (sstat.meta[1]<<8) | (sstat.meta[2]<<16) | (sstat.meta[3]<<24); // mtime is retrieved from the meta character array in little-endian order
     struct utimbuf times;
-    memcpy(&times.actime, sstat.meta, 4);
-    memcpy(&times.modtime, sstat.meta, 4);
+    times.actime = times.modtime = meta;
     utime(destPath, &times);
     #endif
 
