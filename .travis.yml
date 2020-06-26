@@ -25,6 +25,10 @@ matrix:
       - CROSS_TRIPLE=arm-linux-gnueabihf
       - EXTRA_ARGS='-e SKIP_TESTS=1'
     - env:
+      - TARGET_OS=linux-arm64
+      - CROSS_TRIPLE=aarch64-linux-gnu
+      - EXTRA_ARGS='-e SKIP_TESTS=1'
+    - env:
       - TARGET_OS=win32
       - CROSS_TRIPLE=i686-w64-mingw32
       # multiarch/crossbuild doesn't come with 'zip',
