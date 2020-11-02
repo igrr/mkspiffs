@@ -25,6 +25,7 @@
 #include <direct.h>
 #endif
 
+static constexpr int UNPACK_BUFFER_SIZE = 65536;
 static std::vector<uint8_t> s_flashmem;
 
 static std::string s_dirName;
@@ -344,31 +345,37 @@ bool dirCreate(const char* path)
  * @param destPath Destination file path path.
  * @return True or false.
  *
- * @author Pascal Gollor (http://www.pgollor.de/cms/)
+ * @author Pascal Gollor (http://www.pgollor.de/cms/) & Volumetrix
  */
 bool unpackFile(spiffs_dirent *spiffsFile, const char *destPath)
 {
-    u8_t buffer[spiffsFile->size];
+    u8_t buffer[UNPACK_BUFFER_SIZE];
     std::string filename = (const char*)(spiffsFile->name);
 
     // Open file from spiffs file system.
     spiffs_file src = SPIFFS_open(&s_fs, (char *)(filename.c_str()), SPIFFS_RDONLY, 0);
 
-    // read content into buffer
-    SPIFFS_read(&s_fs, src, buffer, spiffsFile->size);
+    // Open file to write to
+    FILE* dst = fopen(destPath, "wb");
 
+    int32_t bytesRead = 0;
+     do {
+        // read content into buffer
+        bytesRead = SPIFFS_read(&s_fs, src, buffer, UNPACK_BUFFER_SIZE);
+
+        // Write content into file.
+        size_t written = fwrite(buffer, sizeof(u8_t), bytesRead, dst);
+
+        if (written != bytesRead) {
+            /* read error */
+            std::cout << "Error: " << bytesRead << std::endl;
+        }
+    } while (bytesRead == UNPACK_BUFFER_SIZE);
     // Close spiffs file.
     SPIFFS_close(&s_fs, src);
 
-    // Open file.
-    FILE* dst = fopen(destPath, "wb");
-
-    // Write content into file.
-    fwrite(buffer, sizeof(u8_t), sizeof(buffer), dst);
-
     // Close file.
     fclose(dst);
-
 
     return true;
 }
