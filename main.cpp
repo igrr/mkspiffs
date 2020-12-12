@@ -13,6 +13,7 @@
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <utime.h>
 #include <unistd.h>
 #include <cstring>
 #include <string>
@@ -23,6 +24,12 @@
 
 #ifdef _WIN32
 #include <direct.h>
+#endif
+
+#if CONFIG_SPIFFS_USE_MTIME
+#if SPIFFS_OBJ_META_LEN != 4
+#error You must set both CONFIG_SPIFFS_USE_MTIME=1 and CONFIG_SPIFFS_META_LENGTH=4 for ESP IDF MTIME compatibility.
+#endif
 #endif
 
 static std::vector<uint8_t> s_flashmem;
@@ -153,6 +160,16 @@ int addFile(char* name, const char* path)
     if (s_debugLevel > 0) {
         std::cout << "file size: " << size << std::endl;
     }
+
+    // read and update file modification time
+    #if CONFIG_SPIFFS_USE_MTIME
+    struct stat sbuff;
+    stat(path, &sbuff);
+    uint8_t meta[4]; // mtime is stored in the meta character array in little-endian order
+    meta[0] = sbuff.st_mtime & 0xFF; meta[1] = (sbuff.st_mtime>>8) & 0xFF;
+    meta[2] = (sbuff.st_mtime>>16) & 0xFF; meta[3] = (sbuff.st_mtime>>24) & 0xFF;
+    SPIFFS_fupdate_meta(&s_fs, dst, meta);
+    #endif
 
     size_t left = size;
     uint8_t data_byte;
@@ -369,6 +386,15 @@ bool unpackFile(spiffs_dirent *spiffsFile, const char *destPath)
     // Close file.
     fclose(dst);
 
+    // Update file modification time.
+    #if CONFIG_SPIFFS_USE_MTIME
+    spiffs_stat sstat;
+    SPIFFS_stat(&s_fs, (const char*)spiffsFile->name, &sstat);
+    uint32_t meta = (sstat.meta[0]<<0) | (sstat.meta[1]<<8) | (sstat.meta[2]<<16) | (sstat.meta[3]<<24); // mtime is retrieved from the meta character array in little-endian order
+    struct utimbuf times;
+    times.actime = times.modtime = meta;
+    utime(destPath, &times);
+    #endif
 
     return true;
 }
