@@ -23,5 +23,8 @@ make clean
 make dist BUILD_CONFIG_NAME="-esp-idf" \
     CPPFLAGS="-DSPIFFS_OBJ_META_LEN=4"
 
-
+# Build configuration for ESP-RTOS SDK (esp8266)
+make clean
+make dist BUILD_CONFIG_NAME="-esp8266-rtos" \
+    CPPFLAGS="-DSPIFFS_OBJ_META_LEN=4 -DSPIFFS_ALIGNED_OBJECT_INDEX_TABLES=4"
 
