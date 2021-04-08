@@ -88,6 +88,13 @@ $ make clean
 $ make dist CPPFLAGS="-DSPIFFS_OBJ_META_LEN=4" BUILD_CONFIG_NAME=-custom
 ```
 
+To use an entire alternate SPIFFS configuration file, specify its location in `SPIFFS_CONFIG_H_DIR`:
+
+```bash
+$ make clean
+$ make dist SPIFFS_CONFIG_H_DIR=your/include/path
+```
+
 To check which options were set when building mkspiffs, use `--version` command:
 
 ```

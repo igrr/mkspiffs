@@ -66,6 +66,12 @@ OBJ		:= main.o \
 
 INCLUDES := -Itclap -Iinclude -Ispiffs/src -I.
 
+ifneq ($(SPIFFS_CONFIG_H_DIR),)
+override INCLUDES :=  \
+	-I$(SPIFFS_CONFIG_H_DIR) \
+	$(INCLUDES)
+endif
+
 FILES_TO_FORMAT := $(shell find . -not -path './spiffs/*' \( -name '*.c' -o -name '*.cpp' \))
 
 DIFF_FILES := $(addsuffix .diff,$(FILES_TO_FORMAT))
