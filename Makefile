@@ -37,9 +37,9 @@ else
 endif
 
 ifeq ($(TARGET_OS),osx)
-	TARGET_CFLAGS   = -mmacosx-version-min=10.7 -arch i386 -arch x86_64
-	TARGET_CXXFLAGS = -mmacosx-version-min=10.7 -arch i386 -arch x86_64 -stdlib=libc++
-	TARGET_LDFLAGS  = -mmacosx-version-min=10.7 -arch i386 -arch x86_64 -stdlib=libc++
+	TARGET_CFLAGS   = -mmacosx-version-min=10.7 -arch x86_64
+	TARGET_CXXFLAGS = -mmacosx-version-min=10.7 -arch x86_64 -stdlib=libc++
+	TARGET_LDFLAGS  = -mmacosx-version-min=10.7 -arch x86_64 -stdlib=libc++
 endif
 
 # Packaging into archive (for 'dist' target)
