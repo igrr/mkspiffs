@@ -202,12 +202,20 @@ int addFiles(const char* dirname, const char* subPath)
 
     // Open directory
     if ((dir = opendir (dirPath.c_str())) != NULL) {
+        std::vector<std::string> files;
 
-        // Read files from directory.
-        while ((ent = readdir (dir)) != NULL) {
+        while ((ent = readdir(dir)) != NULL) {
+            files.push_back(ent->d_name);
+        }
+
+        // sort files -> same behaviour on all platforms
+        std::sort(files.begin(), files.end());
+
+        for (const auto &file : files) {
+            // Process the file
 
             // Ignore dir itself.
-            if ((strcmp(ent->d_name, ".") == 0) || (strcmp(ent->d_name, "..") == 0)) {
+            if ((strcmp(file.c_str(), ".") == 0) || (strcmp(file.c_str(), "..") == 0)) {
                 continue;
             }
 
@@ -215,8 +223,8 @@ int addFiles(const char* dirname, const char* subPath)
                 bool skip = false;
                 size_t ignored_file_names_count = sizeof(ignored_file_names) / sizeof(ignored_file_names[0]);
                 for (size_t i = 0; i < ignored_file_names_count; ++i) {
-                    if (strcmp(ent->d_name, ignored_file_names[i]) == 0) {
-                        std::cerr << "skipping " << ent->d_name << std::endl;
+                    if (strcmp(file.c_str(), ignored_file_names[i]) == 0) {
+                        std::cerr << "skipping " << file << std::endl;
                         skip = true;
                         break;
                     }
@@ -227,7 +235,7 @@ int addFiles(const char* dirname, const char* subPath)
             }
 
             std::string fullpath = dirPath;
-            fullpath += ent->d_name;
+            fullpath += file;
             struct stat path_stat;
             stat (fullpath.c_str(), &path_stat);
 
@@ -236,23 +244,23 @@ int addFiles(const char* dirname, const char* subPath)
                 if (S_ISDIR(path_stat.st_mode)) {
                     // Prepare new sub path.
                     std::string newSubPath = subPath;
-                    newSubPath += ent->d_name;
+                    newSubPath += file;
                     newSubPath += "/";
 
                     if (addFiles(dirname, newSubPath.c_str()) != 0) {
-                        std::cerr << "Error for adding content from " << ent->d_name << "!" << std::endl;
+                        std::cerr << "Error for adding content from " << file << "!" << std::endl;
                     }
 
                     continue;
                 } else {
-                    std::cerr << "skipping " << ent->d_name << std::endl;
+                    std::cerr << "skipping " << file << std::endl;
                     continue;
                 }
             }
 
             // Filepath with dirname as root folder.
             std::string filepath = subPath;
-            filepath += ent->d_name;
+            filepath += file;
             std::cout << filepath << std::endl;
 
             // Add File to image.
